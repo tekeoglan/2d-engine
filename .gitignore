@@ -1,0 +1,14 @@
+build/
+out/
+*.bin
+*.o
+*.so
+*.dll
+*.dylib
+*.exe
+*.pdb
+*.dSYM/
+.cache/
+.idea/
+.vscode/
+odin-test-data/
