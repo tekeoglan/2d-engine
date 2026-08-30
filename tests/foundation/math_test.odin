@@ -25,5 +25,5 @@ identity_matrix_leaves_point_unchanged :: proc(t: ^testing.T) {
 }
 
 transform_composition_has_documented_order :: proc(t: ^testing.T) {
-	panic("TODO(milestone 1 test): choose examples that reveal matrix order")
+	panic("TODO(milestone 1 test): verify scale, then rotation, then translation")
 }

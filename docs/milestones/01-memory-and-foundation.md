@@ -31,7 +31,8 @@ vectors in every quadrant.
 ### Exercise 2 — Rectangles and transforms
 
 Implement rectangle containment and overlap using the documented edge policy.
-Then implement identity matrices and point transformation.
+Then implement column-major matrices using `left * right` composition and
+`translation * rotation * scale` for `Transform_2D`.
 
 Search:
 

@@ -1,5 +1,12 @@
 package foundation
 
+// INVALID_SLOT_INDEX is a sentinel: a reserved value that can never identify
+// a live slot. It makes invalid identifiers explicit instead of ambiguous.
+INVALID_SLOT_INDEX :: ~u32(0)
+
+// FIRST_LIVE_GENERATION reserves generation zero for invalid identifiers.
+FIRST_LIVE_GENERATION :: u32(1)
+
 // Generation_Id identifies a reusable slot without confusing an old reference
 // with a newer value that later occupies the same index.
 //
@@ -20,7 +27,10 @@ INVALID_GENERATION_ID :: Generation_Id{
 // generation_id_make constructs a live identifier from a slot and generation.
 //
 // Preconditions: index is not INVALID_SLOT_INDEX and generation is nonzero.
+// Postcondition: the result satisfies generation_id_is_valid.
+// Ownership/lifetime: inputs and result are copied; no allocation occurs.
 // Failure: programmer-invalid inputs should trigger a development assertion.
+// Thread: safe on any thread because no shared state is used.
 // Research: `generational index handle invariants`.
 generation_id_make :: proc(index, generation: u32) -> Generation_Id {
 	panic("TODO(milestone 1): implement generation_id_make")
@@ -29,7 +39,10 @@ generation_id_make :: proc(index, generation: u32) -> Generation_Id {
 // generation_id_is_valid reports whether id has the shape of a live identifier.
 // It does not prove that a particular slot table currently contains the id.
 //
-// Allocation: none. Failure: none.
+// Preconditions: none. Postcondition: id is unchanged.
+// Ownership/lifetime: input is copied; no allocation occurs.
+// Failure: none. Thread: safe on any thread because no shared state is used.
+// Research: `generational identifier structural validity vs live lookup`.
 generation_id_is_valid :: proc(id: Generation_Id) -> bool {
 	panic("TODO(milestone 1): implement generation_id_is_valid")
 }
@@ -37,7 +50,9 @@ generation_id_is_valid :: proc(id: Generation_Id) -> bool {
 // generation_next returns the next live generation and skips reserved zero if
 // the unsigned counter wraps.
 //
-// Allocation: none. Failure: none.
+// Preconditions: none. Postcondition: result is never zero.
+// Ownership/lifetime: input and result are copied; no allocation occurs.
+// Failure: none. Thread: safe on any thread because no shared state is used.
 // Research: `unsigned integer wrap generation counter skip zero`.
 generation_next :: proc(current: u32) -> u32 {
 	panic("TODO(milestone 1): implement generation_next")

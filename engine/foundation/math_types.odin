@@ -41,7 +41,8 @@ Transform_2D :: struct {
 
 // Mat3 is a column-major 3x3 matrix used for homogeneous 2D transformations.
 // Homogeneous coordinates allow translation, rotation, and scale to be
-// composed through matrix multiplication.
+// composed through matrix multiplication. Element (row, column) is stored at
+// `column*3 + row`. Points are treated as column vectors.
 Mat3 :: struct {
 	elements: [9]f32,
 }

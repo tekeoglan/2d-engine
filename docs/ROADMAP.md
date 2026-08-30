@@ -13,9 +13,15 @@ Deliverables:
 
 - Pin the Odin compiler, SDL3, OpenGL loader/bindings, and decoder versions.
 - Record every dependency's purpose, source, version, and license.
-- Add one command each for checking, testing, debug building, and release
-  packaging.
+- Record the command lifecycle: checking and testing exist immediately; debug
+  and release builds arrive with the game entry point; packaging arrives with
+  the selected package format.
 - Confirm Linux x86-64 as the only supported target for version 0.1.
+
+Scaffold status: the exact compiler/native versions and planned decoder snapshot
+are recorded and verified through [DEPENDENCIES.md](DEPENDENCIES.md). Setup is
+not complete until later milestones introduce their real game-build and
+packaging targets.
 
 Research phrases:
 
@@ -51,6 +57,8 @@ Deliverables:
 - Borderless fullscreen, VSync, and high-DPI state.
 - Real clock adapter and deterministic test clock adapter.
 - OpenGL 3.3 context creation and function loading.
+- Versioned JSON display settings that persist window mode, size, VSync, and
+  volume preferences between runs.
 
 Research phrases:
 
@@ -253,6 +261,8 @@ Deliverables:
 - Tile collision metadata, spawn points, and triggers.
 - Camera-based tile culling.
 - A small top-down room using actions, animation, collision, audio, text, and UI.
+- A versioned JSON saved-game example whose game-owned data is separate from
+  engine runtime and backend state.
 
 Research phrases:
 

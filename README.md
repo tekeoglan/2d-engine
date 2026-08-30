@@ -25,13 +25,17 @@ Read these documents in order:
 1. [Project contract](docs/PROJECT_CONTRACT.md)
 2. [Roadmap](docs/ROADMAP.md)
 3. [Architecture](docs/ARCHITECTURE.md)
-4. [Memory model](docs/MEMORY_MODEL.md)
-5. [Glossary](docs/GLOSSARY.md)
-6. [Milestone 1](docs/milestones/01-memory-and-foundation.md)
+4. [Dependency lock](docs/DEPENDENCIES.md)
+5. [Memory model](docs/MEMORY_MODEL.md)
+6. [Glossary](docs/GLOSSARY.md)
+7. [Milestone 1](docs/milestones/01-memory-and-foundation.md)
 
 ## Current milestone
 
-Milestone 1 defines the foundation module and its unfinished test skeletons.
+Milestone 0 has scaffolded the repository and locked the current tool/dependency
+choices. It remains open until later milestones provide real game-build and
+packaging targets. Milestone 1 defines the foundation module and its unfinished
+test skeletons.
 Type-check the declarations with:
 
 ```sh
