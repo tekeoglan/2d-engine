@@ -1,5 +1,7 @@
 package foundation_tests
 
+import fo "../../engine/foundation"
+import "core:math"
 import "core:testing"
 import foundation "../../engine/foundation"
 
@@ -48,6 +50,23 @@ identity_matrix_leaves_point_unchanged :: proc(t: ^testing.T) {
 	panic("TODO(milestone 1 test): specify identity transformation behavior")
 }
 
-transform_composition_has_documented_order :: proc(t: ^testing.T) {
-	panic("TODO(milestone 1 test): verify scale, then rotation, then translation")
+@(test)
+transform_2d_matrix_scales_rotates_then_translates :: proc(t: ^testing.T) {
+	transform := fo.Transform_2D{
+		position = fo.Vec2{10, 20},
+		rotation_radians = math.PI / 2,
+		scale = fo.Vec2{2, 3},
+	}
+
+	transformed_point := fo.mat3_transform_point(
+		fo.transform_2d_matrix(transform),
+		fo.Vec2{1, 1},
+	)
+	epsilon: f32 = 0.0001
+
+	testing.expect(
+		t,
+		math.abs(transformed_point.x - 7) < epsilon && math.abs(transformed_point.y - 22) < epsilon,
+		"transform matrix must scale, rotate, then translate the point",
+	)
 }
