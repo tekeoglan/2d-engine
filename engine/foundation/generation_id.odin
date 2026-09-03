@@ -19,8 +19,8 @@ Generation_Id :: struct {
 
 // INVALID_GENERATION_ID is the canonical invalid identifier. Callers should
 // compare through generation_id_is_valid rather than depending on its fields.
-INVALID_GENERATION_ID :: Generation_Id{
-	index = INVALID_SLOT_INDEX,
+INVALID_GENERATION_ID :: Generation_Id {
+	index      = INVALID_SLOT_INDEX,
 	generation = 0,
 }
 
@@ -33,7 +33,9 @@ INVALID_GENERATION_ID :: Generation_Id{
 // Thread: safe on any thread because no shared state is used.
 // Research: `generational index handle invariants`.
 generation_id_make :: proc(index, generation: u32) -> Generation_Id {
-	panic("TODO(milestone 1): implement generation_id_make")
+	assert(index != INVALID_GENERATION_ID.index || generation != INVALID_GENERATION_ID.generation)
+
+	return Generation_Id{index, generation}
 }
 
 // generation_id_is_valid reports whether id has the shape of a live identifier.
@@ -44,7 +46,10 @@ generation_id_make :: proc(index, generation: u32) -> Generation_Id {
 // Failure: none. Thread: safe on any thread because no shared state is used.
 // Research: `generational identifier structural validity vs live lookup`.
 generation_id_is_valid :: proc(id: Generation_Id) -> bool {
-	panic("TODO(milestone 1): implement generation_id_is_valid")
+	return(
+		!(id.index == INVALID_GENERATION_ID.index ||
+			id.generation == INVALID_GENERATION_ID.generation) \
+	)
 }
 
 // generation_next returns the next live generation and skips reserved zero if
@@ -55,5 +60,9 @@ generation_id_is_valid :: proc(id: Generation_Id) -> bool {
 // Failure: none. Thread: safe on any thread because no shared state is used.
 // Research: `unsigned integer wrap generation counter skip zero`.
 generation_next :: proc(current: u32) -> u32 {
-	panic("TODO(milestone 1): implement generation_next")
+	next := current + 1
+	if next == 0 {
+		return FIRST_LIVE_GENERATION
+	}
+	return next
 }

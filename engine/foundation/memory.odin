@@ -9,6 +9,7 @@ import "core:mem"
 // frees storage. Moving this value after callers retain its allocator is unsafe
 // because that allocator refers to the arena's address.
 Frame_Arena :: struct {
+	// this field is unnecessary, the data is already stored in arena.
 	storage:        []byte,
 	arena:          mem.Arena,
 	is_initialized: bool,
@@ -47,8 +48,19 @@ Memory_Context :: struct {
 // is a programmer error checked by assertion.
 // Thread: main engine thread in 0.1; this value is not internally synchronized.
 // Research: `Odin mem arena_init borrowed buffer`.
-frame_arena_init :: proc(arena: ^Frame_Arena, storage: []byte) -> Engine_Error {
-	panic("TODO(milestone 1): implement frame_arena_init")
+frame_arena_init :: proc(fa: ^Frame_Arena, storage: []byte) -> Engine_Error {
+	assert(!fa.is_initialized, "Frame arena is already initialized.")
+
+	if storage == nil {
+		return Engine_Error{.Invalid_Argument, "Initial storage can't be empty."}
+	}
+
+	fa.storage = storage
+	mem.arena_init(&fa.arena, storage)
+
+	fa.is_initialized = true
+
+	return Engine_Error{.None, ""}
 }
 
 // frame_arena_allocator returns an allocator that points into arena.
@@ -60,8 +72,10 @@ frame_arena_init :: proc(arena: ^Frame_Arena, storage: []byte) -> Engine_Error {
 // Failure: an invalid arena is a programmer error checked by assertion.
 // Thread: main engine thread in 0.1; this value is not internally synchronized.
 // Research: `Odin mem arena_allocator allocator data pointer`.
-frame_arena_allocator :: proc(arena: ^Frame_Arena) -> mem.Allocator {
-	panic("TODO(milestone 1): implement frame_arena_allocator")
+frame_arena_allocator :: proc(fa: ^Frame_Arena) -> mem.Allocator {
+	assert(fa.is_initialized, "Frame Arena is not initialized.")
+
+	return mem.arena_allocator(&fa.arena)
 }
 
 // frame_arena_reset releases all arena allocations together for reuse.
@@ -73,8 +87,10 @@ frame_arena_allocator :: proc(arena: ^Frame_Arena) -> mem.Allocator {
 // Failure: an invalid arena is a programmer error checked by assertion.
 // Thread: main engine thread in 0.1; this value is not internally synchronized.
 // Research: `arena allocator reset invalidates allocations`.
-frame_arena_reset :: proc(arena: ^Frame_Arena) {
-	panic("TODO(milestone 1): implement frame_arena_reset")
+frame_arena_reset :: proc(fa: ^Frame_Arena) {
+	assert(fa.is_initialized, "Frame Arena is not initialized.")
+
+	mem.arena_free_all(&fa.arena)
 }
 
 // frame_arena_deinit invalidates the wrapper without freeing caller-owned
@@ -86,8 +102,12 @@ frame_arena_reset :: proc(arena: ^Frame_Arena) {
 // Failure: an invalid arena is a programmer error checked by assertion.
 // Thread: main engine thread in 0.1; this value is not internally synchronized.
 // Research: `arena deinitialize borrowed backing storage ownership`.
-frame_arena_deinit :: proc(arena: ^Frame_Arena) {
-	panic("TODO(milestone 1): implement frame_arena_deinit")
+frame_arena_deinit :: proc(fa: ^Frame_Arena) {
+	assert(fa.is_initialized, "Frame Arena is not initialized.")
+
+	fa.arena = mem.Arena{}
+	fa.storage = []byte{}
+	fa.is_initialized = false
 }
 
 // memory_context_init prepares tracked persistent allocation and frame
@@ -103,12 +123,39 @@ frame_arena_deinit :: proc(arena: ^Frame_Arena) {
 // Thread: main engine thread in 0.1; this context is not internally synchronized.
 // Research: `Odin tracking_allocator_init internals allocator lifetime`.
 memory_context_init :: proc(
-	memory_context:             ^Memory_Context,
-	backing_allocator:          mem.Allocator,
+	memory_context: ^Memory_Context,
+	backing_allocator: mem.Allocator,
 	tracker_internals_allocator: mem.Allocator,
-	frame_storage:              []byte,
+	frame_storage: []byte,
 ) -> Engine_Error {
-	panic("TODO(milestone 1): implement memory_context_init")
+	assert(!memory_context.is_initialized, "Memory context is already initialized.")
+
+	if backing_allocator.procedure == nil || tracker_internals_allocator.procedure == nil {
+		return Engine_Error{.Invalid_Argument, "An allocator procedure is missing."}
+	}
+
+	if len(frame_storage) == 0 {
+		return Engine_Error{.Invalid_Argument, "Frame storage can't be empty."}
+	}
+
+	err := frame_arena_init(&memory_context.frame, frame_storage)
+	if err.kind != .None {
+		return err
+	}
+
+	memory_context.backing_allocator = backing_allocator
+	memory_context.tracker_internals_allocator = tracker_internals_allocator
+	mem.tracking_allocator_init(
+		&memory_context.persistent_tracker,
+		backing_allocator,
+		tracker_internals_allocator,
+	)
+	memory_context.persistent_tracker.bad_free_callback =
+		mem.tracking_allocator_bad_free_callback_add_to_array
+
+	memory_context.is_initialized = true
+
+	return NO_ERROR
 }
 
 // memory_context_persistent_allocator returns the allocator through which
@@ -122,7 +169,9 @@ memory_context_init :: proc(
 // Thread: main engine thread in 0.1; this context is not internally synchronized.
 // Research: `Odin tracking_allocator wrapper allocator data pointer`.
 memory_context_persistent_allocator :: proc(memory_context: ^Memory_Context) -> mem.Allocator {
-	panic("TODO(milestone 1): implement memory_context_persistent_allocator")
+	assert(memory_context.is_initialized, "memory context is not initialized.")
+
+	return mem.tracking_allocator(&memory_context.persistent_tracker)
 }
 
 // memory_context_allocation_report snapshots tracked allocation totals.
@@ -134,7 +183,14 @@ memory_context_persistent_allocator :: proc(memory_context: ^Memory_Context) -> 
 // Thread: main engine thread in 0.1; this context is not internally synchronized.
 // Research: `Odin Tracking_Allocator current_memory_allocated allocation_map`.
 memory_context_allocation_report :: proc(memory_context: ^Memory_Context) -> Allocation_Report {
-	panic("TODO(milestone 1): implement memory_context_allocation_report")
+	assert(memory_context.is_initialized, "memory context is not initialized.")
+
+	return Allocation_Report {
+		cast(i64)len(memory_context.persistent_tracker.allocation_map),
+		memory_context.persistent_tracker.current_memory_allocated,
+		memory_context.persistent_tracker.peak_memory_allocated,
+		cast(i64)len(memory_context.persistent_tracker.bad_free_array),
+	}
 }
 
 // memory_context_deinit reports remaining allocations, destroys tracker
@@ -151,5 +207,18 @@ memory_context_allocation_report :: proc(memory_context: ^Memory_Context) -> All
 // Thread: main engine thread in 0.1; this context is not internally synchronized.
 // Research: `tracking allocator destroy metadata live allocation report order`.
 memory_context_deinit :: proc(memory_context: ^Memory_Context) -> Allocation_Report {
-	panic("TODO(milestone 1): implement memory_context_deinit")
+	assert(memory_context.is_initialized, "memory context is not initialized.")
+
+	report := memory_context_allocation_report(memory_context)
+	frame_arena_deinit(&memory_context.frame)
+	mem.tracking_allocator_destroy(&memory_context.persistent_tracker)
+
+	memory_context.backing_allocator = mem.Allocator{}
+	memory_context.tracker_internals_allocator = mem.Allocator{}
+	memory_context.persistent_tracker = mem.Tracking_Allocator{}
+	memory_context.frame = Frame_Arena{}
+
+	memory_context.is_initialized = false
+
+	return report
 }
