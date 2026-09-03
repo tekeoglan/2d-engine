@@ -127,17 +127,23 @@ rect_overlaps :: proc(a, b: Rect) -> bool {
 // Ownership/lifetime: inputs and result are copied; no allocation occurs.
 // Failure: none. Thread: safe on any thread because no shared state is used.
 // Research: `column major matrix composition order transform`.
-mat3_multiply :: proc(left, right: Mat3) -> Mat3 {
-	// m_r_c = sum(i to k) {a_r_i x b_i_c}
-	m: Mat3
-	for r := 0; r < 3; r += 1 {
-		for c := 0; c < 3; c += 1 {
-			for k := 0; k < 3; k += 1 {
-				m[r][c] += left[r][k] * right[k][c]
-			}
-		}
-	}
+mat3_multiply :: proc "contextless" (left, right: Mat3) -> (m: Mat3) {
+	#no_bounds_check {
+		// Row 0
+		m[0][0] = left[0][0] * right[0][0] + left[0][1] * right[1][0] + left[0][2] * right[2][0]
+		m[0][1] = left[0][0] * right[0][1] + left[0][1] * right[1][1] + left[0][2] * right[2][1]
+		m[0][2] = left[0][0] * right[0][2] + left[0][1] * right[1][2] + left[0][2] * right[2][2]
 
+		// Row 1
+		m[1][0] = left[1][0] * right[0][0] + left[1][1] * right[1][0] + left[1][2] * right[2][0]
+		m[1][1] = left[1][0] * right[0][1] + left[1][1] * right[1][1] + left[1][2] * right[2][1]
+		m[1][2] = left[1][0] * right[0][2] + left[1][1] * right[1][2] + left[1][2] * right[2][2]
+
+		// Row 2
+		m[2][0] = left[2][0] * right[0][0] + left[2][1] * right[1][0] + left[2][2] * right[2][0]
+		m[2][1] = left[2][0] * right[0][1] + left[2][1] * right[1][1] + left[2][2] * right[2][1]
+		m[2][2] = left[2][0] * right[0][2] + left[2][1] * right[1][2] + left[2][2] * right[2][2]
+	}
 	return m
 }
 
