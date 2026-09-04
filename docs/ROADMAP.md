@@ -37,12 +37,12 @@ Purpose: learn ownership and establish vocabulary used by every later module.
 Deliverables:
 
 - Engine constants and error categories.
-- 2D math data types and unfinished operations.
-- Generational identifiers and unfinished validity operations.
+- 2D math data types and operations.
+- Generational identifiers and validity operations.
 - A persistent tracking allocator plus frame arena interface.
-- Headless test skeletons and memory exercises.
+- Headless tests covering foundation invariants and memory exercises.
 
-This is the current milestone. See
+Milestone 1 is complete. See
 [01-memory-and-foundation.md](milestones/01-memory-and-foundation.md).
 
 ## Milestone 2 — Platform adapter
@@ -59,6 +59,9 @@ Deliverables:
 - OpenGL 3.3 context creation and function loading.
 - Versioned JSON display settings that persist window mode, size, VSync, and
   volume preferences between runs.
+
+This is the current milestone. See
+[02-platform-adapter.md](milestones/02-platform-adapter.md).
 
 Research phrases:
 

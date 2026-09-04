@@ -15,8 +15,8 @@ The first two reference games are:
 - Procedure bodies do not contain engine behavior.
 - A `panic("TODO: ...")` marks work that belongs to you.
 - Future milestone packages are documented but are not generated prematurely.
-- SDL3, OpenGL, format decoders, editors, networking, and multithreading are not
-  part of milestone 1.
+- Format decoders, editors, networking, and multithreading are not part of the
+  current platform-adapter milestone.
 
 ## Start here
 
@@ -29,13 +29,16 @@ Read these documents in order:
 5. [Memory model](docs/MEMORY_MODEL.md)
 6. [Glossary](docs/GLOSSARY.md)
 7. [Milestone 1](docs/milestones/01-memory-and-foundation.md)
+8. [Milestone 2](docs/milestones/02-platform-adapter.md)
 
 ## Current milestone
 
 Milestone 0 has scaffolded the repository and locked the current tool/dependency
 choices. It remains open until later milestones provide real game-build and
-packaging targets. Milestone 1 defines the foundation module and its unfinished
-test skeletons.
+packaging targets. Milestone 1's foundation implementation and active tests are
+complete. Milestone 2 is now the working milestone: build the SDL3 platform
+adapter, OpenGL context/loader seam, clocks, window events, and versioned
+display settings described in [its guide](docs/milestones/02-platform-adapter.md).
 Type-check the declarations with:
 
 ```sh
@@ -43,9 +46,21 @@ odin check engine/foundation -no-entry-point -strict-style
 odin check tests/foundation -no-entry-point -strict-style
 ```
 
-The first registered test deliberately panics. Replace its TODO with assertions,
-make the smallest implementation pass, and only then register the next test
-skeleton. A failing TODO is not a compiler problem; it is the lesson boundary.
+The completed foundation tests should pass. Unregistered TODO skeletons remain
+lesson boundaries until their exercise is activated; a failing TODO is not a
+compiler problem.
+
+Milestone 2 now has a type-checkable scaffold in `engine/platform` and
+`tests/platform`. Its platform procedures and first registered test intentionally
+contain TODO bodies. Implement one documented seam at a time, then activate the
+next test.
+
+Check the new declarations with:
+
+```sh
+odin check engine/platform -no-entry-point -strict-style
+odin check tests/platform -no-entry-point -strict-style
+```
 
 ## Agreed technical direction
 

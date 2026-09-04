@@ -16,8 +16,9 @@ Imports may point left, never right. Circular package imports are forbidden.
 
 ## Planned package map
 
-Only `foundation` exists in milestone 1. Other paths are created when their
-milestone begins.
+`foundation` is complete and the `platform` scaffold is introduced in
+milestone 2. Other paths are created when their milestone begins; platform
+procedures remain deliberately unfinished until that milestone is implemented.
 
 ```text
 engine/
