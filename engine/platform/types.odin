@@ -1,7 +1,5 @@
 package platform
 
-import fo "../foundation"
-
 // DISPLAY_SETTINGS_VERSION identifies the JSON shape written by this
 // milestone. A future incompatible shape must use a new version rather than
 // being decoded as if it were this one.
@@ -28,10 +26,10 @@ Window_Size :: struct {
 // Window_Settings contains user-requested display values. It intentionally
 // does not contain focus, minimized state, or the current drawable size.
 Window_Settings :: struct {
-	width:                 i32,
-	height:                i32,
-	mode:                  Window_Mode,
-	vsync_enabled:         bool,
+	width:         i32,
+	height:        i32,
+	mode:          Window_Mode,
+	vsync_enabled: bool,
 }
 
 // Volume_Settings stores preferences for the buses introduced by the audio
@@ -55,29 +53,29 @@ Display_Settings :: struct {
 // that consumes this configuration unless the implementation documents a
 // longer copy.
 Platform_Config :: struct {
-	title:               string,
-	window:              Window_Settings,
-	request_high_dpi:    bool,
-	settings_path:       string,
+	title:            string,
+	window:           Window_Settings,
+	request_high_dpi: bool,
+	settings_path:    string,
 }
 
 // Window_State contains the latest observed state of the native window.
 // logical_size and drawable_size may differ on a high-DPI display.
 Window_State :: struct {
-	logical_size:      Window_Size,
-	drawable_size:     Window_Size,
-	mode:              Window_Mode,
-	vsync_enabled:     bool,
-	is_focused:        bool,
-	is_minimized:      bool,
-	is_high_dpi:       bool,
+	logical_size:  Window_Size,
+	drawable_size: Window_Size,
+	mode:          Window_Mode,
+	vsync_enabled: bool,
+	is_focused:    bool,
+	is_minimized:  bool,
+	is_high_dpi:   bool,
 }
 
 // OpenGL_Context_Info records the context contract and loader result without
 // exposing any OpenGL binding types to callers.
 OpenGL_Context_Info :: struct {
-	major_version:  i32,
-	minor_version:  i32,
+	major_version:   i32,
+	minor_version:   i32,
 	is_core_profile: bool,
 	loader_is_ready: bool,
 }
@@ -106,10 +104,14 @@ Platform_Event :: struct {
 // implementation storage; callers must use platform procedures instead of
 // reading or destroying them.
 Platform_Context :: struct {
-	window_handle:     rawptr,
-	gl_context_handle: rawptr,
-	window_state:      Window_State,
-	gl_info:           OpenGL_Context_Info,
+	window_handle:      rawptr,
+	gl_context_handle:  rawptr,
+	window_id:          u32,
+	// The last windowed logical size is retained while fullscreen changes the
+	// native window's reported size to the desktop size.
+	windowed_size:      Window_Size,
+	window_state:       Window_State,
+	gl_info:            OpenGL_Context_Info,
 	sdl_is_initialized: bool,
 	is_initialized:     bool,
 }
