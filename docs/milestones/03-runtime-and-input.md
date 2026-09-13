@@ -3,7 +3,7 @@
 ## Outcome
 
 After this milestone, a small Linux program owns its outer loop: it polls
-platform events, samples keyboard, mouse, and controller input once per
+platform events, samples keyboard and mouse input once per
 rendered frame, advances game simulation at a fixed 60 Hz through an
 accumulator, and invokes an independently paced render callback. Game code
 consumes named digital and analog actions rather than raw device codes, and
@@ -31,7 +31,7 @@ activate the next test as you learn what the seams need.
 4. [Roadmap](../ROADMAP.md) — milestone 3 section.
 5. [Milestone 2](02-platform-adapter.md) — platform events, production and
    deterministic clocks, and the settings seam this runtime consumes.
-6. The SDL3 keyboard, mouse, and gamepad binding comments in the pinned Odin
+6. The SDL3 keyboard and mouse binding comments in the pinned Odin
    distribution.
 
 Before writing input code, run the dependency verifier and resolve any
@@ -87,8 +87,8 @@ SDL and point to the exact seam where each SDL type stops.
 ### Exercise 2 — Raw input state and edge semantics
 
 Define the smallest raw device state the later mapping needs: keyboard keys,
-mouse position and buttons plus per-frame wheel delta, and controller
-buttons and axes. Define one pressed/held/released policy for the whole
+mouse position and buttons plus per-frame wheel delta. Define one
+pressed/held/released policy for the whole
 package and document it in the interface:
 
 - Pressed is true for exactly the input frame in which a control
@@ -115,31 +115,22 @@ Stop when you can state, without reading code, what pressed, held, and
 released report for a key tapped between two samples, held across three
 frames, and released during window focus loss.
 
-### Exercise 3 — SDL keyboard, mouse, and controller adapters
+### Exercise 3 — SDL keyboard and mouse adapters
 
-Sample real devices behind the input seam: keyboard state, mouse position
-in window logical coordinates with buttons and wheel, and a bounded set of
-attached controllers with buttons and axes. Unknown or irrelevant SDL input
+Sample real devices behind the input seam: keyboard state and mouse position
+in window logical coordinates with buttons and wheel. Unknown or irrelevant SDL input
 events are handled deliberately rather than leaking through the seam.
-Controller hot-plug must not invalidate previously sampled state or crash
-the caller; document the attach/detach rule and the maximum simultaneously
-tracked controller count.
 
-Controllers need an explicit, documented deadzone policy. Record whether
-each stick uses an axial or radial deadzone, the normalized input range,
-and how sub-threshold values are treated, so later action mapping has a
-stable `[-1, 1]` contract to consume.
+Analog bindings consume key pairs and wheel deltas under a stable `[-1, 1]`
+contract.
 
 Search:
 
 - `SDL3 keyboard state scancode keycode difference`
 - `SDL3 mouse state window coordinates wheel delta`
-- `SDL3 gamepad axis button hot plug count`
-- `controller deadzone axial radial`
 
-Stop when a caller can read one key, the mouse position and wheel delta,
-and one stick axis without importing SDL, and can explain which deadzone
-shape its stick uses and why.
+Stop when a caller can read one key and the mouse position and wheel delta
+without importing SDL.
 
 ### Exercise 4 — Digital and analog action mappings
 
@@ -147,13 +138,12 @@ Add configurable bindings that turn raw controls into game-facing actions.
 Digital actions expose the same pressed/held/released triple as raw
 controls. Analog actions expose one `f32` in `[-1, 1]`. Requirements:
 
-- One action may bind several physical sources (for example, a key, a
-  mouse button, and a controller button driving one jump action).
+- One action may bind several physical sources (for example, a key and a
+  mouse button driving one jump action).
 - The combination rule is deterministic and documented: which source wins
   or how sources merge when several are active at once.
-- Analog bindings document their source (key pair, mouse delta, stick
-  axis), scale, and how the controller deadzone from exercise 3 flows
-  through without being applied twice.
+- Analog bindings document their source (key pair, mouse wheel delta)
+  and scale.
 - Rebinding never allocates during the frame; mapping storage is owned by
   an explicit configuration value with a documented lifetime.
 
@@ -165,7 +155,7 @@ Search:
 
 - `game input action mapping digital analog bindings`
 - `multiple bindings same action combine rule deterministic`
-- `analog action normalization stick trigger key pair`
+- `analog action normalization key pair mouse wheel`
 
 Stop when you can add a second physical source to an existing action,
 predict the combined result for every conflicting-input case, and state who
@@ -173,7 +163,7 @@ owns the binding storage.
 
 ### Exercise 5 — Scripted deterministic input playback
 
-Add a scripted test adapter behind the same input seam as the SDL devices.
+Add a scripted test adapter behind the same input seam as the SDL keyboard/mouse adapter.
 A test writes a frame-indexed script of raw controls or actions; the
 runtime consumes exactly one script frame per runtime frame and advances
 only when the runtime advances. Document the out-of-script policy (hold
@@ -191,8 +181,8 @@ Search:
 - `fixed update no wall clock explicit seed determinism`
 - `frame indexed input script out of frames policy`
 
-Stop when a test can replay the same script twice, including focus-loss and
-controller-detach frames, and observe byte-identical action sequences
+Stop when a test can replay the same script twice, including focus-loss frames,
+and observe byte-identical action sequences
 without opening a window or sleeping.
 
 ### Exercise 6 — Fixed-timestep accumulator and render pacing
@@ -260,7 +250,7 @@ callback, input end, frame reset).
 
 Write headless tests through the same interfaces real callers use:
 pressed/held/released transitions across frames, multi-source action
-combination, deadzone boundaries, scripted playback determinism, and
+combination, scripted playback determinism, and
 accumulator step counts (zero, one, several, clamped) driven by the
 deterministic clock without sleeping. Keep one small integration smoke test
 explicit: start the runtime on the supported Linux target, observe fixed
@@ -289,8 +279,8 @@ contract.
   the pressed frame; edges and wheel deltas clear at the frame boundary.
 - One input snapshot is shared by all fixed updates in the same runtime
   frame; focus loss applies the documented stuck-input policy.
-- Analog values remain in `[-1, 1]` after the single documented deadzone
-  and normalization pass.
+- Analog values remain in `[-1, 1]` after the documented normalization
+  pass.
 - Action combination is deterministic for every conflicting-input case.
 - The same initial state plus the same scripted input always reproduces the
   same simulation result on the supported target.
@@ -303,13 +293,11 @@ contract.
 - A Linux build opens a window, runs fixed updates at 60 Hz while the
   render callback is paced independently, and closes cleanly from the
   window manager or a quit action.
-- Keyboard, mouse, and at least one controller each visibly drive a bound
+- Keyboard and mouse each visibly drive a bound
   action; unbinding or rebinding one source behaves as documented.
 - Tapping, holding, and releasing a control shows the correct
   pressed/held/released triple, including across multi-update frames.
 - Focus loss and minimize never leave a stuck pressed or held state.
-- Stick rest positions read as zero action; full deflection reads as full
-  action; the deadzone transition is smooth under the documented rule.
 - Replaying a scripted input sequence twice produces the same simulation
   result without a window and without sleeping.
 - A multi-second frame hitch causes a bounded catch-up, never a freeze or
@@ -324,7 +312,7 @@ contract.
 What I implemented:
 Which seam owns which SDL dependency:
 How pressed/held/released behave across a multi-update frame:
-Which deadzone and combination rules I chose:
+Which combination rule I chose:
 How the accumulator caps catch-up and derives interpolation:
 How scripted playback proves determinism:
 What was confusing:

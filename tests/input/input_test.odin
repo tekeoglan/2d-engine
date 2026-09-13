@@ -17,16 +17,8 @@ focus_loss_applies_configured_stuck_input_policy :: proc(t: ^testing.T) {
 	panic("TODO(milestone 3 test): specify focus-loss clearing and the configured policy")
 }
 
-controller_deadzone_boundaries_follow_configured_kind :: proc(t: ^testing.T) {
-	panic("TODO(milestone 3 test): specify axial and radial deadzone boundaries")
-}
-
 mouse_wheel_delta_clears_at_frame_boundary :: proc(t: ^testing.T) {
 	panic("TODO(milestone 3 test): specify per-frame wheel delta lifetime")
-}
-
-disconnected_controllers_read_as_released_and_zero :: proc(t: ^testing.T) {
-	panic("TODO(milestone 3 test): specify total queries for disconnected slots")
 }
 
 // Keep the import and package vocabulary visible while this file is a

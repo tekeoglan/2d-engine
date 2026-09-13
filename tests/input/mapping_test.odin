@@ -13,8 +13,8 @@ digital_action_combines_multiple_sources_deterministically :: proc(t: ^testing.T
 	panic("TODO(milestone 3 test): specify multi-source digital combination and edges")
 }
 
-analog_action_normalizes_deadzone_once :: proc(t: ^testing.T) {
-	panic("TODO(milestone 3 test): specify analog normalization without double deadzone")
+analog_action_combines_key_pair_and_wheel :: proc(t: ^testing.T) {
+	panic("TODO(milestone 3 test): specify analog key-pair and wheel combination with scale and clamp")
 }
 
 rebinding_replaces_documented_combination_result :: proc(t: ^testing.T) {

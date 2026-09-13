@@ -2,16 +2,15 @@ package input
 
 import fo "../foundation"
 
-// input_config_default returns the first-run device tuning: the default
-// deadzone with an axial shape and stuck-input clearing on focus loss.
+// input_config_default returns the first-run device tuning: stuck-input
+// clearing on focus loss.
 //
 // Preconditions: none.
-// Postconditions: deadzone is in [0, 1) and the value is safe to pass to
-// input_context_init.
+// Postconditions: the value is safe to pass to input_context_init.
 // Ownership/lifetime: the returned value is copied and allocates no memory.
 // Failure: none.
 // Thread: safe on any thread because no shared state is used.
-// Research: `controller deadzone default tuning axial radial`.
+// Research: `focus loss clear input stuck keys game`.
 input_config_default :: proc() -> Input_Config {
 	panic("TODO(milestone 3): define input defaults")
 }
@@ -21,13 +20,12 @@ input_config_default :: proc() -> Input_Config {
 // input_context_set_source and defaults to sampling nothing.
 //
 // Preconditions: context points to zeroed, stable storage and is not already
-// initialized. config carries a deadzone in [0, 1).
+// initialized.
 // Postconditions: on success, input_begin_frame, input_snapshot, and
 // input_context_deinit may be called.
 // Ownership/lifetime: context must remain at a stable address until deinit;
 // values are copied and no memory is allocated.
-// Failure: an invalid context or out-of-range deadzone returns
-// Invalid_Argument.
+// Failure: an invalid context returns Invalid_Argument.
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `opaque input context resource ownership`.
 input_context_init :: proc(ctx: ^Input_Context, config: Input_Config) -> fo.Engine_Error {
@@ -61,9 +59,9 @@ input_source_none :: proc() -> Input_Source {
 	panic("TODO(milestone 3): build null input source")
 }
 
-// input_context_set_source selects the SDL or scripted adapter sampled by
-// later frames. The SDL adapter is private to this package; callers only see
-// the seam.
+// input_context_set_source selects the SDL keyboard/mouse or scripted adapter
+// sampled by later frames. The SDL adapter is private to this package;
+// callers only see the seam.
 //
 // Preconditions: context is initialized and source callbacks are valid for
 // the borrowed data's lifetime, or source is the none value.
@@ -157,53 +155,4 @@ input_key_state :: proc(snapshot: ^Raw_Input_Snapshot, key: Key_Code) -> Button_
 // Research: `mouse button state snapshot accessor`.
 input_mouse_button_state :: proc(snapshot: ^Raw_Input_Snapshot, button: Mouse_Button) -> Button_State {
 	panic("TODO(milestone 3): read mouse button state from snapshot")
-}
-
-// input_controller_button_state reads one controller button triple. An
-// out-of-range slot or a disconnected controller reads as fully released so
-// queries stay total.
-//
-// Preconditions: none.
-// Postconditions: snapshot is unchanged.
-// Ownership/lifetime: inputs are borrowed; no allocation occurs.
-// Failure: none; out-of-range access is a normal released reading.
-// Thread: safe on any thread because no shared state is used.
-// Research: `controller slot disconnected total query gamepad count`.
-input_controller_button_state :: proc(
-	snapshot: ^Raw_Input_Snapshot,
-	controller_index: int,
-	button: Controller_Button,
-) -> Button_State {
-	panic("TODO(milestone 3): read controller button state from snapshot")
-}
-
-// input_controller_axis_value reads one normalized axis in [-1, 1]. An
-// out-of-range slot or a disconnected controller reads as zero.
-//
-// Preconditions: none.
-// Postconditions: snapshot is unchanged.
-// Ownership/lifetime: inputs are borrowed; no allocation occurs.
-// Failure: none; out-of-range access is a normal zero reading.
-// Thread: safe on any thread because no shared state is used.
-// Research: `controller axis normalized range disconnected zero`.
-input_controller_axis_value :: proc(
-	snapshot: ^Raw_Input_Snapshot,
-	controller_index: int,
-	axis: Controller_Axis,
-) -> f32 {
-	panic("TODO(milestone 3): read controller axis value from snapshot")
-}
-
-// input_apply_deadzone maps one raw axis value through the configured
-// deadzone shape. Sub-threshold magnitudes report zero; the result stays in
-// [-1, 1] under the documented normalization rule.
-//
-// Preconditions: deadzone is in [0, 1).
-// Postconditions: inputs are unchanged.
-// Ownership/lifetime: inputs are copied; no allocation occurs.
-// Failure: none.
-// Thread: safe on any thread because no shared state is used.
-// Research: `controller deadzone axial radial`.
-input_apply_deadzone :: proc(value, deadzone: f32, kind: Deadzone_Kind) -> f32 {
-	panic("TODO(milestone 3): apply controller deadzone")
 }

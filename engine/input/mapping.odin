@@ -57,9 +57,7 @@ input_mapping_bind_digital :: proc(
 }
 
 // input_mapping_bind_analog attaches one physical source to an analog action
-// with an explicit scale. Controller axes must not pass through a second
-// deadzone here; the device sampling already applied the single documented
-// pass.
+// with an explicit scale.
 //
 // Preconditions: mapping is initialized, action is in [0, analog_count),
 // binding selects a real source, and scale is finite.
@@ -69,7 +67,7 @@ input_mapping_bind_digital :: proc(
 // Failure: out-of-range actions, None sources, non-finite scales, and a full
 // per-action binding list return Invalid_Argument.
 // Thread: safe on any thread because no shared state is used.
-// Research: `analog action normalization stick trigger key pair`.
+// Research: `analog action normalization key pair mouse wheel`.
 input_mapping_bind_analog :: proc(
 	mapping: ^Input_Mapping,
 	action: int,
