@@ -36,9 +36,10 @@ Read these documents in order:
 Milestone 0 has scaffolded the repository and locked the current tool/dependency
 choices. It remains open until later milestones provide real game-build and
 packaging targets. Milestone 1's foundation implementation and active tests are
-complete. Milestone 2 is now the working milestone: build the SDL3 platform
- adapter, clocks, window events, and versioned
-display settings described in [its guide](docs/milestones/02-platform-adapter.md).
+complete. Milestone 2's SDL3 platform adapter, clocks, window events, and
+versioned display settings are complete as described in [its
+guide](docs/milestones/02-platform-adapter.md). Milestone 3 is now the working
+milestone: own the outer loop and turn raw input into game actions.
 Type-check the declarations with:
 
 ```sh
@@ -50,10 +51,11 @@ The completed foundation tests should pass. Unregistered TODO skeletons remain
 lesson boundaries until their exercise is activated; a failing TODO is not a
 compiler problem.
 
-Milestone 2 now has a type-checkable scaffold in `engine/platform` and
-`tests/platform`. Its platform procedures and first registered test intentionally
-contain TODO bodies. Implement one documented seam at a time, then activate the
-next test.
+Milestone 2's platform procedures are implemented in `engine/platform` and
+covered by the active tests in `tests/platform`. The settings file seam in
+`engine/platform/settings.odin` still carries TODO bodies that the next pass
+should finish or explicitly re-scope before the milestone is treated as fully
+closed.
 
 Check the new declarations with:
 

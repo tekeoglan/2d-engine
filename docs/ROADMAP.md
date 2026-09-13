@@ -59,7 +59,7 @@ Deliverables:
 - Versioned JSON display settings that persist window mode, size, VSync, and
   volume preferences between runs.
 
-This is the current milestone. See
+Milestone 2 is complete. See
 [02-platform-adapter.md](milestones/02-platform-adapter.md).
 
 Research phrases:
@@ -80,6 +80,8 @@ Deliverables:
 - Keyboard, mouse, and controller adapters.
 - Configurable digital and analog action mappings.
 - Headless deterministic input playback for tests.
+
+This is the current milestone.
 
 Research phrases:
 
