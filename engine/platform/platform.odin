@@ -3,8 +3,8 @@ package platform
 import fo "../foundation"
 import "core:c"
 import "core:strings"
-import sdl "vendor:sdl3"
 import gl "vendor:OpenGL"
+import sdl "vendor:sdl3"
 
 PLATFORM_DEFAULT_TITLE :: "2D Engine"
 PLATFORM_DEFAULT_SETTINGS_PATH :: "settings.json"
@@ -16,11 +16,14 @@ platform_error :: proc(message: string) -> fo.Engine_Error {
 }
 
 invalid_platform_handle_error :: proc() -> fo.Engine_Error {
-	return fo.Engine_Error{kind = .Invalid_Handle, message = "Platform context is not initialized."}
+	return fo.Engine_Error {
+		kind = .Invalid_Handle,
+		message = "Platform context is not initialized.",
+	}
 }
 
 platform_default_window_settings :: proc() -> Window_Settings {
-	return Window_Settings{
+	return Window_Settings {
 		width = PLATFORM_DEFAULT_WINDOW_WIDTH,
 		height = PLATFORM_DEFAULT_WINDOW_HEIGHT,
 		mode = .Windowed,
@@ -33,7 +36,12 @@ platform_window_mode_is_supported :: proc(mode: Window_Mode) -> bool {
 }
 
 platform_context_is_valid :: proc(ctx: ^Platform_Context) -> bool {
-	return ctx != nil && ctx.is_initialized && ctx.window_handle != nil && ctx.gl_context_handle != nil
+	return(
+		ctx != nil &&
+		ctx.is_initialized &&
+		ctx.window_handle != nil &&
+		ctx.gl_context_handle != nil \
+	)
 }
 
 platform_window_from_context :: proc(ctx: ^Platform_Context) -> ^sdl.Window {
@@ -56,7 +64,9 @@ platform_refresh_window_sizes :: proc(ctx: ^Platform_Context) -> bool {
 
 	ctx.window_state.logical_size = Window_Size{i32(logical_width), i32(logical_height)}
 	ctx.window_state.drawable_size = Window_Size{i32(drawable_width), i32(drawable_height)}
-	ctx.window_state.is_high_dpi = logical_width != drawable_width || logical_height != drawable_height ||
+	ctx.window_state.is_high_dpi =
+		logical_width != drawable_width ||
+		logical_height != drawable_height ||
 		sdl.GetWindowPixelDensity(window) > 1.0
 	return true
 }
@@ -85,7 +95,8 @@ platform_set_event_state :: proc(
 }
 
 platform_update_high_dpi_state :: proc(ctx: ^Platform_Context) {
-	ctx.window_state.is_high_dpi = ctx.window_state.logical_size.width != ctx.window_state.drawable_size.width ||
+	ctx.window_state.is_high_dpi =
+		ctx.window_state.logical_size.width != ctx.window_state.drawable_size.width ||
 		ctx.window_state.logical_size.height != ctx.window_state.drawable_size.height
 }
 
@@ -144,15 +155,18 @@ platform_translate_sdl_event :: proc(
 }
 
 platform_required_gl_functions_are_available :: proc() -> bool {
-	return sdl.GL_GetProcAddress("glGetIntegerv") != nil &&
+	return(
+		sdl.GL_GetProcAddress("glGetIntegerv") != nil &&
 		sdl.GL_GetProcAddress("glGetString") != nil &&
 		sdl.GL_GetProcAddress("glClear") != nil &&
 		sdl.GL_GetProcAddress("glBindVertexArray") != nil &&
-		sdl.GL_GetProcAddress("glGenVertexArrays") != nil
+		sdl.GL_GetProcAddress("glGenVertexArrays") != nil \
+	)
 }
 
 platform_gl_loader_is_ready :: proc() -> bool {
-	return gl.impl_GetIntegerv != nil &&
+	return(
+		gl.impl_GetIntegerv != nil &&
 		gl.impl_GetString != nil &&
 		gl.impl_Clear != nil &&
 		gl.impl_ClearColor != nil &&
@@ -176,12 +190,16 @@ platform_gl_loader_is_ready :: proc() -> bool {
 		gl.impl_BufferData != nil &&
 		gl.impl_VertexAttribPointer != nil &&
 		gl.impl_EnableVertexAttribArray != nil &&
-		gl.impl_DrawArrays != nil
+		gl.impl_DrawArrays != nil \
+	)
 }
 
 platform_event_updates_window_size :: proc(event_type: sdl.EventType) -> bool {
-	return event_type == .WINDOW_RESIZED || event_type == .WINDOW_PIXEL_SIZE_CHANGED ||
-		event_type == .WINDOW_DISPLAY_SCALE_CHANGED
+	return(
+		event_type == .WINDOW_RESIZED ||
+		event_type == .WINDOW_PIXEL_SIZE_CHANGED ||
+		event_type == .WINDOW_DISPLAY_SCALE_CHANGED \
+	)
 }
 
 platform_append_event :: proc(events: []Platform_Event, count: ^int, event: Platform_Event) {
@@ -200,11 +218,14 @@ platform_append_event :: proc(events: []Platform_Event, count: ^int, event: Plat
 	}
 	// A caller-provided full buffer cannot hold every event. Preserve Quit by
 	// replacing the newest non-quit event so shutdown remains observable.
-	events[len(events)-1] = event
+	events[len(events) - 1] = event
 }
 
 platform_gl_version_satisfies_request :: proc(major, minor: i32) -> bool {
-	return major > OPENGL_REQUESTED_MAJOR || major == OPENGL_REQUESTED_MAJOR && minor >= OPENGL_REQUESTED_MINOR
+	return(
+		major > OPENGL_REQUESTED_MAJOR ||
+		major == OPENGL_REQUESTED_MAJOR && minor >= OPENGL_REQUESTED_MINOR \
+	)
 }
 
 // platform_config_default returns validated first-run configuration.
@@ -218,7 +239,7 @@ platform_gl_version_satisfies_request :: proc(major, minor: i32) -> bool {
 // Thread: safe before platform initialization.
 // Research: `configuration defaults immutable value object`.
 platform_config_default :: proc() -> Platform_Config {
-	return Platform_Config{
+	return Platform_Config {
 		title = PLATFORM_DEFAULT_TITLE,
 		window = platform_default_window_settings(),
 		request_high_dpi = true,
@@ -237,14 +258,10 @@ platform_config_default :: proc() -> Platform_Config {
 // Thread: safe on any thread because no shared state is used.
 // Research: `configuration defaults versioned schema`.
 display_settings_defaults :: proc() -> Display_Settings {
-	return Display_Settings{
+	return Display_Settings {
 		version = DISPLAY_SETTINGS_VERSION,
 		window = platform_default_window_settings(),
-		volume = Volume_Settings{
-			master = 1.0,
-			music = 1.0,
-			effects = 1.0,
-		},
+		volume = Volume_Settings{master = 1.0, music = 1.0, effects = 1.0},
 	}
 }
 
@@ -265,13 +282,22 @@ display_settings_defaults :: proc() -> Display_Settings {
 // Research: `SDL3 OpenGL initialization reverse cleanup order`.
 platform_init :: proc(ctx: ^Platform_Context, config: Platform_Config) -> fo.Engine_Error {
 	if ctx == nil {
-		return fo.Engine_Error{kind = .Invalid_Argument, message = "Platform context cannot be nil."}
+		return fo.Engine_Error {
+			kind = .Invalid_Argument,
+			message = "Platform context cannot be nil.",
+		}
 	}
 	if ctx.is_initialized {
-		return fo.Engine_Error{kind = .Invalid_Argument, message = "Platform context is already initialized."}
+		return fo.Engine_Error {
+			kind = .Invalid_Argument,
+			message = "Platform context is already initialized.",
+		}
 	}
 	if config.window.width <= 0 || config.window.height <= 0 {
-		return fo.Engine_Error{kind = .Invalid_Argument, message = "Window dimensions must be positive."}
+		return fo.Engine_Error {
+			kind = .Invalid_Argument,
+			message = "Window dimensions must be positive.",
+		}
 	}
 	if !platform_window_mode_is_supported(config.window.mode) {
 		return fo.Engine_Error{kind = .Invalid_Argument, message = "Window mode is not supported."}
@@ -307,7 +333,10 @@ platform_init :: proc(ctx: ^Platform_Context, config: Platform_Config) -> fo.Eng
 	title, title_err := strings.clone_to_cstring(config.title, context.temp_allocator)
 	if title_err != nil {
 		platform_deinit(ctx)
-		return fo.Engine_Error{kind = .Out_Of_Memory, message = "Could not prepare the window title."}
+		return fo.Engine_Error {
+			kind = .Out_Of_Memory,
+			message = "Could not prepare the window title.",
+		}
 	}
 	defer delete(title, context.temp_allocator)
 
@@ -344,7 +373,11 @@ platform_init :: proc(ctx: ^Platform_Context, config: Platform_Config) -> fo.Eng
 		platform_deinit(ctx)
 		return platform_error("Required OpenGL functions are unavailable.")
 	}
-	gl.load_up_to(int(OPENGL_REQUESTED_MAJOR), int(OPENGL_REQUESTED_MINOR), sdl.gl_set_proc_address)
+	gl.load_up_to(
+		int(OPENGL_REQUESTED_MAJOR),
+		int(OPENGL_REQUESTED_MINOR),
+		sdl.gl_set_proc_address,
+	)
 	if !platform_gl_loader_is_ready() {
 		platform_deinit(ctx)
 		return platform_error("The OpenGL loader could not load required functions.")
@@ -354,19 +387,20 @@ platform_init :: proc(ctx: ^Platform_Context, config: Platform_Config) -> fo.Eng
 	gl.GetIntegerv(gl.MAJOR_VERSION, &major)
 	gl.GetIntegerv(gl.MINOR_VERSION, &minor)
 	gl.GetIntegerv(gl.CONTEXT_PROFILE_MASK, &profile)
-	if !platform_gl_version_satisfies_request(major, minor) || profile & gl.CONTEXT_CORE_PROFILE_BIT == 0 {
+	if !platform_gl_version_satisfies_request(major, minor) ||
+	   profile & gl.CONTEXT_CORE_PROFILE_BIT == 0 {
 		platform_deinit(ctx)
 		return platform_error("The OpenGL context does not satisfy the 3.3 core contract.")
 	}
 
-	ctx.gl_info = OpenGL_Context_Info{
-		major_version = major,
-		minor_version = minor,
+	ctx.gl_info = OpenGL_Context_Info {
+		major_version   = major,
+		minor_version   = minor,
 		is_core_profile = profile & gl.CONTEXT_CORE_PROFILE_BIT != 0,
 		loader_is_ready = true,
 	}
-	ctx.window_state = Window_State{
-		mode = config.window.mode,
+	ctx.window_state = Window_State {
+		mode          = config.window.mode,
 		vsync_enabled = config.window.vsync_enabled,
 	}
 	if !platform_refresh_window_state(ctx) {
@@ -404,7 +438,10 @@ platform_init :: proc(ctx: ^Platform_Context, config: Platform_Config) -> fo.Eng
 platform_poll_events :: proc(
 	ctx: ^Platform_Context,
 	events: []Platform_Event,
-) -> (int, fo.Engine_Error) {
+) -> (
+	int,
+	fo.Engine_Error,
+) {
 	if !platform_context_is_valid(ctx) {
 		return 0, invalid_platform_handle_error()
 	}
@@ -414,7 +451,8 @@ platform_poll_events :: proc(
 	native_event: sdl.Event
 	for sdl.PollEvent(&native_event) {
 		if native_event.type >= .WINDOW_SHOWN && native_event.type <= .WINDOW_DESTROYED {
-			if event_window_id := native_event.window.windowID; u32(event_window_id) != ctx.window_id {
+			if event_window_id := native_event.window.windowID;
+			   u32(event_window_id) != ctx.window_id {
 				continue
 			}
 			if window_destroyed {
@@ -489,10 +527,7 @@ platform_opengl_context_info :: proc(ctx: ^Platform_Context) -> OpenGL_Context_I
 // known-good state intact.
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `SDL3 borderless fullscreen restore windowed size`.
-platform_set_window_mode :: proc(
-	ctx: ^Platform_Context,
-	mode: Window_Mode,
-) -> fo.Engine_Error {
+platform_set_window_mode :: proc(ctx: ^Platform_Context, mode: Window_Mode) -> fo.Engine_Error {
 	if !platform_context_is_valid(ctx) {
 		return invalid_platform_handle_error()
 	}
@@ -527,7 +562,11 @@ platform_set_window_mode :: proc(
 			ctx.windowed_size = previous_windowed_size
 			return platform_error("SDL could not synchronize the restored window mode.")
 		}
-		if !sdl.SetWindowSize(window, c.int(ctx.windowed_size.width), c.int(ctx.windowed_size.height)) {
+		if !sdl.SetWindowSize(
+			window,
+			c.int(ctx.windowed_size.width),
+			c.int(ctx.windowed_size.height),
+		) {
 			// Restore the previous mode if the size restoration failed.
 			_ = sdl.SetWindowFullscreen(window, true)
 			_ = sdl.SyncWindow(window)

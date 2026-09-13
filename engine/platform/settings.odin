@@ -11,15 +11,14 @@ Settings_Read_Proc :: proc(
 	data: rawptr,
 	path: string,
 	allocator: mem.Allocator,
-) -> ([]byte, fo.Engine_Error)
+) -> (
+	[]byte,
+	fo.Engine_Error,
+)
 
 // Settings_Write_Proc writes one complete settings file. path and bytes are
 // borrowed for the duration of the call.
-Settings_Write_Proc :: proc(
-	data: rawptr,
-	path: string,
-	bytes: []byte,
-) -> fo.Engine_Error
+Settings_Write_Proc :: proc(data: rawptr, path: string, bytes: []byte) -> fo.Engine_Error
 
 // Settings_File_Access is the file seam used by settings serialization. The
 // native adapter and an in-memory test adapter implement the same operations.
@@ -41,7 +40,12 @@ Settings_File_Access :: struct {
 // Thread: safe on any thread because no shared state is used.
 // Research: `configuration validation before applying settings`.
 display_settings_validate :: proc(settings: Display_Settings) -> fo.Engine_Error {
-	panic("TODO(milestone 2): validate display settings")
+	is_version_valid := settings.version == DISPLAY_SETTINGS_VERSION
+	has_valid_sized := settings.window.height > 0 && settings.window.width > 0
+	if !is_version_valid || !has_valid_sized {
+		return {.Invalid_Argument, "Invalid setting arguments."}
+	}
+	return fo.NO_ERROR
 }
 
 // settings_file_access_native returns the production file adapter.
@@ -77,7 +81,10 @@ display_settings_load :: proc(
 	file_access: Settings_File_Access,
 	path: string,
 	allocator: mem.Allocator,
-) -> (Display_Settings, fo.Engine_Error) {
+) -> (
+	Display_Settings,
+	fo.Engine_Error,
+) {
 	panic("TODO(milestone 2): load and decode display settings")
 }
 

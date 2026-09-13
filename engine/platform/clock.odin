@@ -1,6 +1,8 @@
 package platform
 
 import fo "../foundation"
+import sdl "vendor:sdl3"
+
 
 // Clock_Now_Proc reads elapsed seconds from an adapter-owned clock value.
 // The data pointer is borrowed and remains valid for the adapter's lifetime.
@@ -17,8 +19,8 @@ Clock_Adapter :: struct {
 // System_Clock stores the state needed by a monotonic production timer. The
 // platform implementation chooses the supported OS/SDL counter source.
 System_Clock :: struct {
-	start_ticks:  u64,
-	frequency_hz: u64,
+	start_ticks:    u64,
+	frequency_hz:   u64,
 	is_initialized: bool,
 }
 
@@ -40,7 +42,17 @@ Deterministic_Clock :: struct {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `SDL3 performance counter frequency monotonic timer`.
 system_clock_init :: proc(clock: ^System_Clock) -> fo.Engine_Error {
-	panic("TODO(milestone 2): initialize monotonic system clock")
+	if clock == nil || clock.is_initialized {
+		return fo.Engine_Error{.Invalid_Argument, "Invalid clock."}
+	}
+
+	clock.frequency_hz = sdl.GetPerformanceFrequency()
+	if clock.frequency_hz == 0 {
+		return fo.Engine_Error{.Platform, "Couldn't get the frequency."}
+	}
+	clock.start_ticks = sdl.GetPerformanceCounter()
+	clock.is_initialized = true
+	return fo.NO_ERROR
 }
 
 // system_clock_now returns elapsed seconds since system_clock_init.
@@ -53,7 +65,11 @@ system_clock_init :: proc(clock: ^System_Clock) -> fo.Engine_Error {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `monotonic elapsed time no wall clock adjustments`.
 system_clock_now :: proc(clock: ^System_Clock) -> f64 {
-	panic("TODO(milestone 2): read monotonic clock")
+	assert(clock != nil && clock.is_initialized, "Invalid clock.")
+	current_time := sdl.GetPerformanceCounter()
+	dt := current_time - clock.start_ticks
+
+	return f64(dt) / f64(clock.frequency_hz)
 }
 
 // deterministic_clock_init prepares a clock at an explicit timestamp.
@@ -70,7 +86,17 @@ deterministic_clock_init :: proc(
 	clock: ^Deterministic_Clock,
 	initial_seconds: f64,
 ) -> fo.Engine_Error {
-	panic("TODO(milestone 2): initialize deterministic clock")
+	if clock == nil || clock.is_initialized {
+		return fo.Engine_Error{.Invalid_Argument, "Invalid deterministic clock."}
+	}
+
+	if initial_seconds < 0 {
+		return fo.Engine_Error{.Invalid_Argument, "Invalid initial seconds value."}
+	}
+	clock.current_seconds = initial_seconds
+	clock.is_initialized = true
+
+	return fo.NO_ERROR
 }
 
 // deterministic_clock_now returns the current explicitly controlled timestamp.
@@ -82,7 +108,9 @@ deterministic_clock_init :: proc(
 // Thread: safe only on the owning test thread.
 // Research: `fake clock now deterministic test seam`.
 deterministic_clock_now :: proc(clock: ^Deterministic_Clock) -> f64 {
-	panic("TODO(milestone 2): read deterministic clock")
+	assert(clock != nil && clock.is_initialized, "Invalid deterministic clock.")
+
+	return clock.current_seconds
 }
 
 // deterministic_clock_advance moves the test clock forward by an explicit
@@ -94,11 +122,24 @@ deterministic_clock_now :: proc(clock: ^Deterministic_Clock) -> f64 {
 // Failure: invalid or negative advances return Invalid_Argument.
 // Thread: safe only on the owning test thread.
 // Research: `deterministic clock reject negative time travel`.
-deterministic_clock_advance :: proc(
-	clock: ^Deterministic_Clock,
-	seconds: f64,
-) -> fo.Engine_Error {
-	panic("TODO(milestone 2): advance deterministic clock")
+deterministic_clock_advance :: proc(clock: ^Deterministic_Clock, seconds: f64) -> fo.Engine_Error {
+	if clock == nil || !clock.is_initialized {
+		return fo.Engine_Error{.Invalid_Argument, "Invalid deterministic clock."}
+	}
+	if seconds < 0 {
+		return fo.Engine_Error{.Invalid_Argument, "Invalid secons value."}
+	}
+	advance := clock.current_seconds + seconds
+	clock.current_seconds = advance
+	return fo.NO_ERROR
+}
+
+// system_clock_adapter_now reads elapsed seconds from a borrowed System_Clock.
+@(private = "file")
+system_clock_adapter_now :: proc(data: rawptr) -> f64 {
+	clock := cast(^System_Clock)data
+	assert(clock != nil && clock.is_initialized, "Invalid clock.")
+	return system_clock_now(clock)
 }
 
 // system_clock_adapter exposes a production clock through the common clock
@@ -112,7 +153,17 @@ deterministic_clock_advance :: proc(
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `function pointer adapter borrowed context lifetime`.
 system_clock_adapter :: proc(clock: ^System_Clock) -> Clock_Adapter {
-	panic("TODO(milestone 2): build system clock adapter")
+	assert(clock != nil && clock.is_initialized, "Invalid clock.")
+	return Clock_Adapter{now_proc = system_clock_adapter_now, data = clock}
+}
+
+// deterministic_clock_adapter_now reads the timestamp from a borrowed
+// Deterministic_Clock.
+@(private = "file")
+deterministic_clock_adapter_now :: proc(data: rawptr) -> f64 {
+	clock := cast(^Deterministic_Clock)data
+	assert(clock != nil && clock.is_initialized, "Invalid deterministic clock.")
+	return deterministic_clock_now(clock)
 }
 
 // deterministic_clock_adapter exposes a deterministic clock through the common
@@ -125,7 +176,8 @@ system_clock_adapter :: proc(clock: ^System_Clock) -> Clock_Adapter {
 // Thread: safe only on the owning test thread.
 // Research: `function pointer deterministic clock adapter`.
 deterministic_clock_adapter :: proc(clock: ^Deterministic_Clock) -> Clock_Adapter {
-	panic("TODO(milestone 2): build deterministic clock adapter")
+	assert(clock != nil && clock.is_initialized, "Invalid deterministic clock.")
+	return Clock_Adapter{now_proc = deterministic_clock_adapter_now, data = clock}
 }
 
 // clock_adapter_now reads any valid clock adapter.
@@ -137,5 +189,8 @@ deterministic_clock_adapter :: proc(clock: ^Deterministic_Clock) -> Clock_Adapte
 // Thread: follows the selected adapter's thread contract.
 // Research: `Odin procedure pointer callback data rawptr`.
 clock_adapter_now :: proc(adapter: ^Clock_Adapter) -> f64 {
-	panic("TODO(milestone 2): dispatch clock adapter")
+	assert(adapter != nil, "Invalid clock adapter.")
+	assert(adapter.now_proc != nil, "Invalid clock adapter.")
+	assert(adapter.data != nil, "Invalid clock adapter.")
+	return adapter.now_proc(adapter.data)
 }
