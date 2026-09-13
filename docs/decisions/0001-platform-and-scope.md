@@ -5,7 +5,7 @@ Status: accepted on 2026-08-30.
 ## Decision
 
 Target Linux x86-64 first. Use SDL3 for window, input, and audio-device access;
-use OpenGL 3.3 for graphics. Implement engine modules ourselves while using
+use SDL_gpu for graphics. Implement engine modules ourselves while using
 established format decoders behind engine-owned interfaces.
 
 Version 0.1 targets small, single-player arcade and pixel-art games. Pong and a

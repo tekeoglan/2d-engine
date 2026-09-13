@@ -3,9 +3,11 @@
 ## Outcome
 
 After this milestone, a small Linux program can start and shut down cleanly,
-open a resizable window, own an OpenGL 3.3 core context, receive window
+open a resizable window, receive window
 events, and read monotonic time. The rest of the engine sees platform-owned
-types and errors rather than SDL handles, event codes, or OpenGL loader state.
+types and errors rather than SDL handles or event codes. GPU device and
+swapchain ownership belongs to the later rendering milestone, which uses
+SDL_gpu.
 
 The program should be able to run with a real clock and a deterministic clock
 in tests. It should also load and save a versioned display-settings file so a
@@ -27,24 +29,24 @@ supporting slice, then activate the next test as you learn what the seam needs.
 3. [Dependency lock](../DEPENDENCIES.md)
 4. [Memory model](../MEMORY_MODEL.md)
 5. [Roadmap](../ROADMAP.md)
-6. The SDL3 and OpenGL binding comments available in the pinned Odin
+6. The SDL3 binding comments (including SDL_gpu) available in the pinned Odin
    distribution.
 
 Before writing platform code, run the dependency verifier and resolve any
-compiler or native-library mismatch against the lock. Do not copy SDL or
-OpenGL declarations into the repository to work around a version mismatch.
+compiler or native-library mismatch against the lock. Do not copy SDL
+declarations into the repository to work around a version mismatch.
 
 ## Package boundary
 
-Create `engine/platform`. It may depend on `engine/foundation`, SDL3, the
-pinned OpenGL loader, and the standard-library facilities needed for settings
-serialization. Callers outside the package must not need to import SDL3 or
-the OpenGL binding.
+Create `engine/platform`. It may depend on `engine/foundation`, SDL3, and
+the standard-library facilities needed for settings
+serialization. Callers outside the package must not need to import SDL3.
 
-The adapter owns the window, GL context, loader state, and SDL subsystem
+The adapter owns the window and SDL subsystem
 lifecycle. It exposes only engine-facing configuration, state, events, clock
 operations, and `Engine_Error` values. It does not decide what an input means,
 advance game simulation, issue game draw commands, mix audio, or decode assets.
+GPU device and swapchain creation belong to the rendering milestone.
 
 ## Implementation order
 
@@ -83,7 +85,7 @@ Search:
 - `borrowed string lifetime configuration snapshot`
 
 Stop when you can draw the ownership graph from the application entry point to
-SDL, the window, the GL context, and the loader.
+SDL and the window.
 
 ### Exercise 3 — SDL lifecycle and resizable window
 
@@ -108,27 +110,23 @@ Search:
 Stop when closing the window through the window manager reaches the caller as a
 quit event and every startup failure has a matching cleanup path.
 
-### Exercise 4 — OpenGL 3.3 context and loader
+### Exercise 4 — VSync preference and SDL_gpu handoff
 
-Request an OpenGL 3.3 core-profile context before creating the window/context,
-create it only after the window exists, and load the function pointers only
-after the context is current. Query and record the actual context version and
-fail cleanly when the requested contract cannot be met.
-
-Apply the requested VSync mode through the platform adapter and make failures
-observable. A later renderer may use the current context, but it must not own
-context creation, destruction, or SDL initialization. A clear-and-swap smoke
-test is enough to prove the context; game drawing belongs to milestone 4.
+Record the requested VSync preference in the platform window state. The
+SDL_gpu device, swapchain, and present-mode selection belong to the rendering
+milestone, so this milestone stores the preference without creating GPU state.
+A later renderer claims the window for its GPU device and applies the stored
+preference through the swapchain present mode. A window-creation smoke test is
+enough to prove the platform seam; game drawing belongs to milestone 4.
 
 Search:
 
-- `SDL3 OpenGL context attributes core profile version`
-- `SDL3 OpenGL context current load function pointers`
-- `OpenGL loader must run after context creation`
-- `swap interval VSync request unsupported error`
+- `SDL3 GPU device claim window swapchain`
+- `SDL_gpu swapchain present mode VSync`
+- `SDL_gpu device window ownership lifecycle`
 
-Stop when the smoke test can report the actual context and the loader rejects
-missing procedures without leaving a live window or context behind.
+Stop when the smoke test can open a window, record the VSync preference, and
+shut down without leaving a live window behind.
 
 ### Exercise 5 — Event translation and window state
 
@@ -179,7 +177,7 @@ and can explain why changing the system clock cannot change elapsed time.
 Persist user preferences as versioned JSON. At minimum, store window width,
 window height, borderless-fullscreen mode, VSync, and the volume preferences
 needed by the later audio buses. Keep transient observations such as focus,
-minimized state, actual drawable size, and the current context out of the file.
+minimized state, and actual drawable size out of the file.
 
 Use defaults on a first run. A missing file is a normal condition; malformed,
 unreadable, or unsupported-version data must produce an explicit diagnostic and
@@ -223,12 +221,13 @@ rule, and a future schema version cannot be silently misread.
 
 Write headless tests for settings defaults and round-tripping, malformed and
 unsupported versions, event translation, high-DPI state bookkeeping, and the
-deterministic clock. Keep the SDL/window/context test small and explicit: start
+deterministic clock. Keep the SDL/window test small and explicit: start
 the adapter, observe the initial state, exercise resize/fullscreen/VSync where
 the host supports it, and shut it down.
 
 Run the integration smoke test on the supported Linux target with a real
-display. If the test environment has no display or cannot provide OpenGL 3.3,
+display. If the test environment has no display or cannot provide an SDL_gpu
+device,
 report that limitation instead of weakening the production contract. Use the
 foundation tracking allocator or an equivalent diagnostic to verify that
 settings and platform shutdown do not leave owned allocations or native
@@ -238,9 +237,9 @@ resources alive.
 
 - SDL is initialized before any SDL window or event operation and is shut down
   after every SDL-owned resource is destroyed.
-- The GL context is created before function loading, is current during loading,
-  and is destroyed before SDL shuts down.
-- No SDL handle, SDL event code, or OpenGL loader detail crosses the platform
+- The SDL_gpu device, when created by the rendering milestone, is destroyed
+  before SDL shuts down.
+- No SDL handle or SDL event code crosses the platform
   seam.
 - Logical window size and drawable pixel size remain distinct, especially on a
   high-DPI display.
@@ -252,7 +251,7 @@ resources alive.
   through explicit test operations.
 - Settings are validated before applying them and are never partially applied.
 - Every successful initialization has one matching shutdown path, including
-  failures after SDL, window, context, or loader initialization.
+  failures after SDL or window initialization.
 
 ## Manual checklist
 
@@ -264,9 +263,8 @@ resources alive.
   window size.
 - The program reports the logical and drawable sizes separately on a high-DPI
   display.
-- The OpenGL context reports version 3.3 or a compatible higher implementation
-  satisfying the requested core-profile contract, and the loader is ready.
-- VSync is applied or its failure is reported; it is not silently ignored.
+- VSync preference is recorded and handed to the SDL_gpu swapchain; it is not
+  silently ignored.
 - A missing settings file uses defaults, a valid file round-trips, and a bad
   file produces a useful diagnostic without corrupting in-memory state.
 - The deterministic clock reproduces the same timestamps in repeated tests.
@@ -279,7 +277,7 @@ resources alive.
 ```text
 What I implemented:
 Which SDL resource owns which cleanup:
-How the GL context and loader depend on each other:
+How the window hands off to the SDL_gpu device and swapchain:
 What logical size differs from drawable size on my machine:
 Which settings failure policy I chose:
 How I tested time without sleeping:

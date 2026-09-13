@@ -37,7 +37,7 @@ Milestone 0 has scaffolded the repository and locked the current tool/dependency
 choices. It remains open until later milestones provide real game-build and
 packaging targets. Milestone 1's foundation implementation and active tests are
 complete. Milestone 2 is now the working milestone: build the SDL3 platform
-adapter, OpenGL context/loader seam, clocks, window events, and versioned
+ adapter, clocks, window events, and versioned
 display settings described in [its guide](docs/milestones/02-platform-adapter.md).
 Type-check the declarations with:
 
@@ -67,7 +67,7 @@ odin check tests/platform -no-entry-point -strict-style
 - Language: Odin.
 - First platform: Linux x86-64.
 - Platform access: SDL3.
-- Graphics: OpenGL 3.3.
+- Graphics: SDL_gpu.
 - Simulation: fixed 60 Hz updates with independently paced rendering.
 - Architecture: modular monolith with one-way package dependencies.
 - Initial genre scope: small, single-player arcade and pixel-art games.

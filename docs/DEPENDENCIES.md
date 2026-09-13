@@ -10,7 +10,7 @@ is not used by source code until its milestone begins.
 | Odin | `dev-2026-08-nightly:902106f` | compiler, core library, vendor bindings | managed as mise `dev-2026-08` | BSD 3-Clause |
 | SDL3 | `3.4.14` | Linux window, devices, input, and audio access | native library rejected unless the verifier sees this exact version | zlib |
 | Odin SDL3 bindings | Odin snapshot; headers report `3.4.2` | typed access to SDL3 | `vendor:sdl3` in pinned Odin | zlib |
-| Odin OpenGL loader | Odin snapshot; glad-generated OpenGL 4.6 core declarations | load functions, limited by this engine to OpenGL 3.3 core | `vendor:OpenGL` in pinned Odin | MIT and glad license |
+| SDL_gpu (via SDL3) | SDL3 `3.4.14` | GPU rendering backend | SDL3 GPU API in pinned Odin `vendor:sdl3` | zlib |
 | stb_image | `2.27` from Odin snapshot | decode PNG pixels | `vendor:stb/image` | public domain or MIT |
 | stb_truetype | `1.26` from Odin snapshot | rasterize TrueType glyphs | `vendor:stb/truetype` | public domain or MIT |
 | stb_vorbis | `1.22` from Odin snapshot | decode OGG Vorbis | `vendor:stb/vorbis` | public domain or MIT |
@@ -38,7 +38,7 @@ Verify the exact compiler and native dependency versions:
 
 The verifier exits unsuccessfully rather than silently accepting a different
 system SDL3. Milestone 2 will add distro-specific installation guidance before
-any SDL code is introduced. Decoder libraries and the OpenGL loader come from
+any SDL code is introduced. Decoder libraries come from
 the pinned Odin distribution, so their snapshot changes only when the compiler
 lock changes.
 

@@ -11,7 +11,7 @@ build conventions.
 
 Deliverables:
 
-- Pin the Odin compiler, SDL3, OpenGL loader/bindings, and decoder versions.
+- Pin the Odin compiler, SDL3 (including SDL_gpu), and decoder versions.
 - Record every dependency's purpose, source, version, and license.
 - Record the command lifecycle: checking and testing exist immediately; debug
   and release builds arrive with the game entry point; packaging arrives with
@@ -48,7 +48,7 @@ Milestone 1 is complete. See
 ## Milestone 2 — Platform adapter
 
 Purpose: create a Linux window, receive OS events, measure time, and own an
-OpenGL context without leaking SDL details upward.
+without leaking SDL details upward.
 
 Deliverables:
 
@@ -56,7 +56,6 @@ Deliverables:
 - Resizable window, focus, minimize, resize, and quit events.
 - Borderless fullscreen, VSync, and high-DPI state.
 - Real clock adapter and deterministic test clock adapter.
-- OpenGL 3.3 context creation and function loading.
 - Versioned JSON display settings that persist window mode, size, VSync, and
   volume preferences between runs.
 
@@ -66,7 +65,6 @@ This is the current milestone. See
 Research phrases:
 
 - `SDL3 initialization subsystem lifecycle`
-- `SDL3 OpenGL 3.3 core profile context attributes`
 - `SDL3 high DPI drawable size window size difference`
 - `monotonic clock vs wall clock game loop`
 
@@ -91,7 +89,7 @@ Research phrases:
 
 ## Milestone 4 — Renderer foundation
 
-Purpose: make GPU work visible while keeping OpenGL behind the rendering seam.
+Purpose: make GPU work visible while keeping SDL_gpu behind the rendering seam.
 
 Deliverables:
 
@@ -103,10 +101,9 @@ Deliverables:
 
 Research phrases:
 
-- `OpenGL 3.3 rendering pipeline vertex fragment shader`
-- `OpenGL VAO VBO EBO lifetime`
+- `rendering pipeline vertex fragment shader`
 - `pixel perfect integer scaling letterboxing`
-- `OpenGL alpha blending premultiplied alpha`
+- `premultiplied alpha blending`
 
 ## Milestone 5 — First Pong slice
 
@@ -158,7 +155,7 @@ Research phrases:
 
 - `sprite batching texture atlas draw call`
 - `orthographic projection world screen coordinates`
-- `framebuffer object render to texture OpenGL 3.3`
+- `SDL_gpu render target texture swapchain`
 - `uniform reflection custom shader material`
 
 ## Milestone 8 — Scenes, entities, and transforms

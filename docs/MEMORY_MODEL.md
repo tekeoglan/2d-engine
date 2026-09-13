@@ -48,7 +48,7 @@ the interface explicitly says otherwise.
 
 ## External resources
 
-Memory is not the only owned resource. SDL windows, OpenGL buffers, textures,
+Memory is not the only owned resource. SDL windows, SDL_gpu buffers, textures,
 shader programs, audio devices, decoder state, and file handles require explicit
 destruction. Their owners must release them in reverse initialization order.
 

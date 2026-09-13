@@ -13,7 +13,7 @@ Each has a production adapter and a deterministic or in-memory test adapter.
 
 ## Consequences
 
-SDL3 and OpenGL declarations remain local to their adapter modules. Games use
+SDL3 and SDL_gpu declarations remain local to their adapter modules. Games use
 engine-owned value types and handles. Tests exercise the same module interfaces
 as real callers rather than reaching through them.
 

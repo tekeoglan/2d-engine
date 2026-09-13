@@ -94,7 +94,7 @@ popped from existing scenes.
 
 ## Graphics
 
-**Graphics API** — A vocabulary, such as OpenGL, for submitting work to a GPU.
+**Graphics API** — A vocabulary, such as SDL_gpu, for submitting work to a GPU.
 
 **Shader** — A program executed by the GPU during rendering.
 

@@ -25,7 +25,7 @@ engine/
   foundation/   value types, errors, memory policy, generational identifiers
   platform/     SDL3 Linux adapter; no game rules
   input/        raw state and action mapping
-  rendering/    draw interface, command recording, OpenGL adapter
+  rendering/    draw interface, command recording, SDL_gpu adapter
   assets/       manifest, handles, decoding, resource lifetime
   scenes/       scene stack, entities, transforms
   collision/    shapes, queries, contacts, filtering
@@ -50,7 +50,7 @@ The initial real seams are:
 | --- | --- | --- | --- |
 | Clock | SDL monotonic clock | deterministic clock | fixed-loop tests |
 | Input | SDL devices | scripted input | deterministic game tests |
-| Rendering | OpenGL 3.3 | command recorder | headless verification |
+| Rendering | SDL_gpu | command recorder | headless verification |
 | File access | native filesystem | in-memory files | asset tests |
 
 Do not add an interface merely because a dependency could hypothetically be
@@ -60,7 +60,7 @@ replaced. One adapter is a hypothetical seam; two adapters make it real.
 
 The runtime owns configure, initialize, fixed update, render, and shutdown.
 Game callbacks receive only the context they require. Games never call SDL3,
-OpenGL, or the native audio device directly.
+SDL_gpu, or the native audio device directly.
 
 Scene transitions and resource destruction are queued and performed at safe
 points. This prevents a collection from changing while a procedure iterates it.
