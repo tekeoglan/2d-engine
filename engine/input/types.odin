@@ -66,8 +66,14 @@ Analog_Source_Kind :: enum {
 }
 
 // Script_End_Policy decides what the scripted test adapter reports after its
-// last script frame. Hold_Last_Frame repeats the final frame; Release_All
-// reports every control released.
+// last script frame.
+//
+// Hold_Last_Frame repeats the final frame's held keys/buttons, mouse
+// position, and focus every subsequent sample; the per-frame wheel delta
+// reads as zero beyond the script because deltas never hold. Release_All
+// reports every key and button released with a zero wheel delta, keeps the
+// final frame's mouse position so the cursor never jumps, and reports
+// focused; both policies are total for short or empty reads past the end.
 Script_End_Policy :: enum {
 	Hold_Last_Frame,
 	Release_All,
@@ -102,7 +108,15 @@ Raw_Input_Snapshot :: struct {
 
 // Input_Config tunes device sampling without changing its shape.
 // clear_on_focus_loss selects the stuck-input policy applied when the
-// platform reports focus loss.
+// platform reports focus loss or minimize.
+//
+// Focus policy: when the sampled frame reports unfocused and
+// clear_on_focus_loss is true, every key and button held state is forced
+// released before edges are derived, so the frame reports a released edge
+// for each previously held control and no control can remain stuck down.
+// The wheel delta reads as zero on unfocused frames. When
+// clear_on_focus_loss is false, held state is preserved verbatim and the
+// caller accepts responsibility for stuck controls.
 Input_Config :: struct {
 	clear_on_focus_loss: bool,
 }
@@ -116,15 +130,25 @@ Digital_Binding :: struct {
 }
 
 // Digital_Action_Bindings owns every physical source driving one digital
-// action. Combination of several active sources follows the documented
-// deterministic rule.
+// action.
+//
+// Deterministic combination rule: held is the OR of every bound source's
+// held; pressed is the OR of every bound source's pressed; released is true
+// only when at least one source reports released and no source reports
+// held. Pressed therefore wins over a simultaneous release while any
+// source stays down, and releasing one of two held sources leaves the
+// action held with no released edge.
 Digital_Action_Bindings :: struct {
 	bindings: [INPUT_MAX_DIGITAL_BINDINGS_PER_ACTION]Digital_Binding,
 	count:    int,
 }
 
 // Analog_Binding connects one physical control to an analog action. A key
-// pair contributes -1, 0, or +1 before scale.
+// pair contributes -1, 0, or +1 before scale: +1 when only the positive
+// key is held, -1 when only the negative key is held, 0 when neither or
+// both are held. A mouse-wheel binding contributes
+// snapshot.mouse_wheel_delta * scale. Unknown keys in a pair read as never
+// held so a single-key axis can leave one side Unknown.
 Analog_Binding :: struct {
 	kind:         Analog_Source_Kind,
 	negative_key: Key_Code,
@@ -134,6 +158,11 @@ Analog_Binding :: struct {
 
 // Analog_Action_Bindings owns every physical source driving one analog
 // action in the normalized range [-1, 1].
+//
+// Deterministic combination rule: every binding value is summed in binding
+// order (addition is commutative so order is unobservable) and the sum is
+// clamped to [-1, 1]. The clamp is the normalization pass that enforces
+// the contract no matter how many key pairs or wheel sources are active.
 Analog_Action_Bindings :: struct {
 	bindings: [INPUT_MAX_ANALOG_BINDINGS_PER_ACTION]Analog_Binding,
 	count:    int,
@@ -142,11 +171,17 @@ Analog_Action_Bindings :: struct {
 // Input_Mapping is the game-owned action configuration. Games own the action
 // indices; this package owns the mechanism that reads them. The value is
 // fixed-size so rebinding never allocates during the frame.
+//
+// Storage ownership: the mapping value owns all binding storage inline.
+// Callers lend the mapping to query procedures by pointer; queries borrow
+// it for the call only. Rebinding mutates the caller's value in place and
+// never allocates.
 Input_Mapping :: struct {
-	digitals:      [INPUT_MAX_DIGITAL_ACTIONS]Digital_Action_Bindings,
-	digital_count: int,
-	analogs:       [INPUT_MAX_ANALOG_ACTIONS]Analog_Action_Bindings,
-	analog_count:  int,
+	digitals:       [INPUT_MAX_DIGITAL_ACTIONS]Digital_Action_Bindings,
+	digital_count:  int,
+	analogs:        [INPUT_MAX_ANALOG_ACTIONS]Analog_Action_Bindings,
+	analog_count:   int,
+	is_initialized: bool,
 }
 
 // Digital_Action_State is the resolved pressed/held/released triple for one
@@ -159,6 +194,13 @@ Digital_Action_State :: struct {
 
 // Input_Sample_Proc writes one raw device frame into snapshot. The data
 // pointer is borrowed and remains valid for the source's lifetime.
+//
+// Contract for sources: write only held states, mouse position, wheel
+// delta, and focus into snapshot; leave pressed/released cleared. The
+// input context derives all edges by comparing new held against retained
+// history, so every source shares one pressed/held/released policy.
+// Script frames likewise contribute only held/position/wheel/focus;
+// pressed/released stored in script frames are ignored and re-derived.
 Input_Sample_Proc :: proc(data: rawptr, snapshot: ^Raw_Input_Snapshot)
 
 // Input_Source is the narrow input seam consumed by the runtime. The SDL
@@ -180,10 +222,16 @@ Scripted_Input :: struct {
 // Input_Context owns sampled input state. current is the snapshot shared
 // with fixed updates; previous is the retained history edges are derived
 // from. source selects the SDL keyboard/mouse adapter or scripted playback.
+// pending focus observations from input_notify_focus_changed are consumed
+// by the next input_begin_frame and override the sampled focus for that
+// frame, so a platform focus loss observed between frames still clears
+// stuck input in the same sampled frame.
 Input_Context :: struct {
-	config:         Input_Config,
-	current:        Raw_Input_Snapshot,
-	previous:       Raw_Input_Snapshot,
-	source:         Input_Source,
-	is_initialized: bool,
+	config:             Input_Config,
+	current:            Raw_Input_Snapshot,
+	previous:           Raw_Input_Snapshot,
+	source:             Input_Source,
+	has_pending_focus:  bool,
+	pending_focused:    bool,
+	is_initialized:     bool,
 }

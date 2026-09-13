@@ -25,6 +25,12 @@ RUNTIME_MAX_FRAME_TIME_SECONDS :: f64(0.25)
 // event is preserved even when the buffer fills.
 RUNTIME_MAX_PLATFORM_EVENTS_PER_FRAME :: 32
 
+// RUNTIME_STEP_EPSILON absorbs binary floating-point residue when exact
+// multiples of FIXED_DT_SECONDS are accumulated and subtracted. It is far
+// smaller than any real frame-time fraction tests assert, so genuine
+// leftovers (for example, half a step) are never snapped away.
+RUNTIME_STEP_EPSILON :: f64(1e-9)
+
 // Runtime_Fixed_Update_Proc advances game simulation by one fixed delta.
 // snapshot is the shared per-frame input every update in the frame observes;
 // data is the borrowed game state supplied during initialization.

@@ -12,7 +12,7 @@ import fo "../foundation"
 // Thread: safe on any thread because no shared state is used.
 // Research: `focus loss clear input stuck keys game`.
 input_config_default :: proc() -> Input_Config {
-	panic("TODO(milestone 3): define input defaults")
+	return {true}
 }
 
 // input_context_init prepares sampled input state from an explicit config.
@@ -29,7 +29,20 @@ input_config_default :: proc() -> Input_Config {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `opaque input context resource ownership`.
 input_context_init :: proc(ctx: ^Input_Context, config: Input_Config) -> fo.Engine_Error {
-	panic("TODO(milestone 3): initialize input context")
+	if ctx == nil || ctx.is_initialized {
+		return fo.Engine_Error{.Invalid_Argument, "Input context invalid."}
+	}
+	ctx^ = Input_Context {
+		config   = config,
+		source   = Input_Source{},
+		current  = Raw_Input_Snapshot{},
+		previous = Raw_Input_Snapshot{},
+	}
+	ctx.current.is_focused = true
+	ctx.previous.is_focused = true
+	ctx.is_initialized = true
+
+	return fo.NO_ERROR
 }
 
 // input_context_deinit releases input ownership and marks the context
@@ -43,7 +56,10 @@ input_context_init :: proc(ctx: ^Input_Context, config: Input_Config) -> fo.Engi
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `resource acquisition initialization reverse order cleanup`.
 input_context_deinit :: proc(ctx: ^Input_Context) {
-	panic("TODO(milestone 3): deinitialize input context")
+	assert(ctx != nil && ctx.is_initialized, "Invalid input context.")
+
+	ctx^ = Input_Context{}
+	ctx.is_initialized = false
 }
 
 // input_source_none returns a source that samples nothing. Tests that drive
@@ -56,7 +72,15 @@ input_context_deinit :: proc(ctx: ^Input_Context) {
 // Thread: safe on any thread because no shared state is used.
 // Research: `null input source test seam deterministic`.
 input_source_none :: proc() -> Input_Source {
-	panic("TODO(milestone 3): build null input source")
+	return Input_Source{sample_proc = input_none_sample_proc, data = nil}
+}
+
+@(private = "package")
+input_none_sample_proc :: proc(data: rawptr, snapshot: ^Raw_Input_Snapshot) {
+	// Deliberately samples nothing so the caller's preserved held state
+	// flows into edge derivation unchanged. Snapshot is untouched.
+	_ = data
+	_ = snapshot
 }
 
 // input_context_set_source selects the SDL keyboard/mouse or scripted adapter
@@ -72,12 +96,27 @@ input_source_none :: proc() -> Input_Source {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `function pointer adapter borrowed context lifetime`.
 input_context_set_source :: proc(ctx: ^Input_Context, source: Input_Source) {
-	panic("TODO(milestone 3): select input source")
+	assert(ctx != nil && ctx.is_initialized, "Invalid input context.")
+	ctx.source = source
 }
 
 // input_begin_frame samples the selected source once and derives the
 // pressed/held/released edges from the retained previous frame. Focus loss
 // applies the configured stuck-input policy before edges are derived.
+//
+// Edge policy: pressed is true exactly when new held is down and old held
+// was up; released is true exactly when new held is up and old held was
+// down; held mirrors new held. A key tapped and released between two
+// samples is invisible to edges by design: sampling observes held levels,
+// not inter-sample transitions. A key held across three frames reports
+// pressed once, then held-only, then released on the matching release
+// sample. All fixed updates in the same runtime frame share this snapshot.
+//
+// Focus policy: the pending platform observation (if any) overrides the
+// sampled focus for this frame. When the effective frame is unfocused and
+// clear_on_focus_loss is set, every sampled held state is forced released
+// and the wheel reads as zero before edges are derived, so held controls
+// report one released edge and can never stick.
 //
 // Preconditions: context is initialized and remains at a stable address.
 // Postconditions: input_snapshot returns the shared frame every fixed update
@@ -89,7 +128,66 @@ input_context_set_source :: proc(ctx: ^Input_Context, source: Input_Source) {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `input edge pressed held released frame state`.
 input_begin_frame :: proc(ctx: ^Input_Context) {
-	panic("TODO(milestone 3): sample input and derive edges")
+	assert(ctx != nil && ctx.is_initialized, "Invalid input context.")
+
+	// Start from preserved held state so the none source (which writes
+	// nothing) flows through unchanged.
+	sampled := ctx.current
+	// Clear stale edges from the preserved copy; sources only write held.
+	for key in Key_Code {
+		sampled.keys[key].pressed = false
+		sampled.keys[key].released = false
+	}
+	for button in Mouse_Button {
+		sampled.mouse_buttons[button].pressed = false
+		sampled.mouse_buttons[button].released = false
+	}
+	if ctx.source.sample_proc != nil {
+		ctx.source.sample_proc(ctx.source.data, &sampled)
+	}
+
+	// Resolve effective focus: a pending platform observation wins over
+	// whatever the device sampled, and is consumed exactly once.
+	effective_focused := sampled.is_focused
+	if ctx.has_pending_focus {
+		effective_focused = ctx.pending_focused
+		ctx.has_pending_focus = false
+	}
+	sampled.is_focused = effective_focused
+
+	// Apply the stuck-input guard before edge derivation.
+	if !effective_focused && ctx.config.clear_on_focus_loss {
+		for key in Key_Code {
+			sampled.keys[key].held = false
+		}
+		for button in Mouse_Button {
+			sampled.mouse_buttons[button].held = false
+		}
+		sampled.mouse_wheel_delta = 0
+	}
+
+	// Derive single-frame edges against retained history.
+	derived := sampled
+	for key in Key_Code {
+		new_held := sampled.keys[key].held
+		old_held := ctx.previous.keys[key].held
+		derived.keys[key] = Button_State {
+			pressed  = new_held && !old_held,
+			held     = new_held,
+			released = !new_held && old_held,
+		}
+	}
+	for button in Mouse_Button {
+		new_held := sampled.mouse_buttons[button].held
+		old_held := ctx.previous.mouse_buttons[button].held
+		derived.mouse_buttons[button] = Button_State {
+			pressed  = new_held && !old_held,
+			held     = new_held,
+			released = !new_held && old_held,
+		}
+	}
+	ctx.current = derived
+	ctx.previous = derived
 }
 
 // input_end_frame clears single-frame edges and the mouse wheel delta while
@@ -103,7 +201,31 @@ input_begin_frame :: proc(ctx: ^Input_Context) {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `input frame boundary clear edge wheel delta`.
 input_end_frame :: proc(ctx: ^Input_Context) {
-	panic("TODO(milestone 3): clear input frame edges")
+	assert(ctx != nil && ctx.is_initialized, "Invalid input context.")
+	for key in Key_Code {
+		ctx.current.keys[key].pressed = false
+		ctx.current.keys[key].released = false
+	}
+	for button in Mouse_Button {
+		ctx.current.mouse_buttons[button].pressed = false
+		ctx.current.mouse_buttons[button].released = false
+	}
+	ctx.current.mouse_wheel_delta = 0
+	// Keep previous.held aligned with current.held so the next begin
+	// compares against the preserved hold, not against cleared edges.
+	for key in Key_Code {
+		ctx.previous.keys[key].pressed = false
+		ctx.previous.keys[key].released = false
+		ctx.previous.keys[key].held = ctx.current.keys[key].held
+	}
+	for button in Mouse_Button {
+		ctx.previous.mouse_buttons[button].pressed = false
+		ctx.previous.mouse_buttons[button].released = false
+		ctx.previous.mouse_buttons[button].held = ctx.current.mouse_buttons[button].held
+	}
+	ctx.previous.mouse_wheel_delta = 0
+	ctx.previous.mouse_position = ctx.current.mouse_position
+	ctx.previous.is_focused = ctx.current.is_focused
 }
 
 // input_snapshot returns a copy of the current sampled frame for fixed
@@ -116,7 +238,8 @@ input_end_frame :: proc(ctx: ^Input_Context) {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `input snapshot shared fixed updates single sample per frame`.
 input_snapshot :: proc(ctx: ^Input_Context) -> Raw_Input_Snapshot {
-	panic("TODO(milestone 3): return current input snapshot")
+	assert(ctx != nil && ctx.is_initialized, "Invalid input context.")
+	return ctx.current
 }
 
 // input_notify_focus_changed records the platform focus observation consumed
@@ -129,7 +252,9 @@ input_snapshot :: proc(ctx: ^Input_Context) -> Raw_Input_Snapshot {
 // Thread: main engine thread in 0.1; not internally synchronized.
 // Research: `focus loss clear input stuck keys game`.
 input_notify_focus_changed :: proc(ctx: ^Input_Context, focused: bool) {
-	panic("TODO(milestone 3): record input focus observation")
+	assert(ctx != nil && ctx.is_initialized, "Invalid input context.")
+	ctx.has_pending_focus = true
+	ctx.pending_focused = focused
 }
 
 // input_key_state reads one key triple from a snapshot. The snapshot is
@@ -142,7 +267,11 @@ input_notify_focus_changed :: proc(ctx: ^Input_Context, focused: bool) {
 // Thread: safe on any thread because no shared state is used.
 // Research: `input snapshot accessor borrowed query total function`.
 input_key_state :: proc(snapshot: ^Raw_Input_Snapshot, key: Key_Code) -> Button_State {
-	panic("TODO(milestone 3): read key state from snapshot")
+	assert(snapshot != nil, "Invalid input snapshot.")
+	if key == .Unknown {
+		return Button_State{}
+	}
+	return snapshot.keys[key]
 }
 
 // input_mouse_button_state reads one mouse button triple from a snapshot.
@@ -153,6 +282,13 @@ input_key_state :: proc(snapshot: ^Raw_Input_Snapshot, key: Key_Code) -> Button_
 // Failure: none.
 // Thread: safe on any thread because no shared state is used.
 // Research: `mouse button state snapshot accessor`.
-input_mouse_button_state :: proc(snapshot: ^Raw_Input_Snapshot, button: Mouse_Button) -> Button_State {
-	panic("TODO(milestone 3): read mouse button state from snapshot")
+input_mouse_button_state :: proc(
+	snapshot: ^Raw_Input_Snapshot,
+	button: Mouse_Button,
+) -> Button_State {
+	assert(snapshot != nil, "Invalid input snapshot.")
+	if button == .Unknown {
+		return Button_State{}
+	}
+	return snapshot.mouse_buttons[button]
 }
