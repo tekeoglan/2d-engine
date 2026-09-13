@@ -39,9 +39,12 @@ choices. It remains open until later milestones provide real game-build and
 packaging targets. Milestone 1's foundation implementation and active tests are
 complete. Milestone 2's SDL3 platform adapter, clocks, window events, and
 versioned display settings are complete as described in [its
-guide](docs/milestones/02-platform-adapter.md). Milestone 3 is now the working
-milestone: own the outer loop and turn raw input into game actions as
-described in [its guide](docs/milestones/03-runtime-and-input.md).
+guide](docs/milestones/02-platform-adapter.md). Milestone 3's outer loop,
+fixed 60 Hz simulation, input edges, action mappings, and deterministic
+playback are complete as described in [its
+guide](docs/milestones/03-runtime-and-input.md). Milestone 4 is now the working
+milestone: make GPU work visible while keeping SDL_gpu behind the rendering
+seam.
 Type-check the declarations with:
 
 ```sh
@@ -66,8 +69,9 @@ odin check engine/platform -no-entry-point -strict-style
 odin check tests/platform -no-entry-point -strict-style
 ```
 
-Milestone 3 creates `engine/input` and `engine/runtime` with headless tests
-in `tests/input` and `tests/runtime`. Check the new declarations with:
+Milestone 3's input and runtime procedures are implemented in `engine/input`
+and `engine/runtime` and covered by the active tests in `tests/input` and
+`tests/runtime`. Check the new declarations with:
 
 ```sh
 odin check engine/input -no-entry-point -strict-style

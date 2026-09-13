@@ -81,7 +81,7 @@ Deliverables:
 - Configurable digital and analog action mappings.
 - Headless deterministic input playback for tests.
 
-This is the current milestone. See
+Milestone 3 is complete. See
 [03-runtime-and-input.md](milestones/03-runtime-and-input.md).
 
 Research phrases:
@@ -101,6 +101,8 @@ Deliverables:
 - Vertex array, vertex buffer, and index buffer ownership.
 - Configurable logical resolution, integer scaling, and letterboxing.
 - Recording render adapter for headless command verification.
+
+This is the current milestone.
 
 Research phrases:
 
