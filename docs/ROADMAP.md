@@ -81,7 +81,8 @@ Deliverables:
 - Configurable digital and analog action mappings.
 - Headless deterministic input playback for tests.
 
-This is the current milestone.
+This is the current milestone. See
+[03-runtime-and-input.md](milestones/03-runtime-and-input.md).
 
 Research phrases:
 

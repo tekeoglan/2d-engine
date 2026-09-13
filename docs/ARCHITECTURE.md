@@ -16,9 +16,10 @@ Imports may point left, never right. Circular package imports are forbidden.
 
 ## Planned package map
 
-`foundation` is complete and the `platform` scaffold is introduced in
-milestone 2. Other paths are created when their milestone begins; platform
-procedures remain deliberately unfinished until that milestone is implemented.
+`foundation` is complete, `platform` is implemented in milestone 2, and the
+`input` and `runtime` scaffold is introduced in milestone 3. Other paths are
+created when their milestone begins; later-milestone procedures remain
+deliberately unfinished until their milestone is implemented.
 
 ```text
 engine/

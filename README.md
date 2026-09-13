@@ -30,6 +30,7 @@ Read these documents in order:
 6. [Glossary](docs/GLOSSARY.md)
 7. [Milestone 1](docs/milestones/01-memory-and-foundation.md)
 8. [Milestone 2](docs/milestones/02-platform-adapter.md)
+9. [Milestone 3](docs/milestones/03-runtime-and-input.md)
 
 ## Current milestone
 
@@ -39,7 +40,8 @@ packaging targets. Milestone 1's foundation implementation and active tests are
 complete. Milestone 2's SDL3 platform adapter, clocks, window events, and
 versioned display settings are complete as described in [its
 guide](docs/milestones/02-platform-adapter.md). Milestone 3 is now the working
-milestone: own the outer loop and turn raw input into game actions.
+milestone: own the outer loop and turn raw input into game actions as
+described in [its guide](docs/milestones/03-runtime-and-input.md).
 Type-check the declarations with:
 
 ```sh
@@ -53,15 +55,25 @@ compiler problem.
 
 Milestone 2's platform procedures are implemented in `engine/platform` and
 covered by the active tests in `tests/platform`. The settings file seam in
-`engine/platform/settings.odin` still carries TODO bodies that the next pass
-should finish or explicitly re-scope before the milestone is treated as fully
-closed.
+ `engine/platform/settings.odin` still carries TODO bodies that the next pass
+ should finish or explicitly re-scope before the milestone is treated as fully
+ closed.
 
 Check the new declarations with:
 
 ```sh
 odin check engine/platform -no-entry-point -strict-style
 odin check tests/platform -no-entry-point -strict-style
+```
+
+Milestone 3 creates `engine/input` and `engine/runtime` with headless tests
+in `tests/input` and `tests/runtime`. Check the new declarations with:
+
+```sh
+odin check engine/input -no-entry-point -strict-style
+odin check engine/runtime -no-entry-point -strict-style
+odin check tests/input -no-entry-point -strict-style
+odin check tests/runtime -no-entry-point -strict-style
 ```
 
 ## Agreed technical direction
